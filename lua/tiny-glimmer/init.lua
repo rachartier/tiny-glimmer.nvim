@@ -52,8 +52,6 @@ M.config = {
 }
 local function sanitize_highlights(options)
 	for name, highlight_settings in pairs(options.animations) do
-		print(name)
-		print(vim.inspect(highlight_settings))
 		if highlight_settings.from_color and highlight_settings.from_color:sub(1, 1) ~= "#" then
 			local converted_from_color = utils.int_to_hex(utils.get_highlight(highlight_settings.from_color).bg)
 			highlight_settings.from_color = converted_from_color

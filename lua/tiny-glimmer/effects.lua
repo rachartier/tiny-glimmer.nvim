@@ -78,16 +78,6 @@ return {
 			b = rainbow_colors[index].b + (rainbow_colors[next_index].b - rainbow_colors[index].b) * color_progress,
 		}
 
-		if progress >= 0.9 then
-			local final = utils.hex_to_rgb(self.settings.to_color)
-			local fade = (progress - 0.9) * 10
-			current = {
-				r = current.r + (final.r - current.r) * fade,
-				g = current.g + (final.g - current.g) * fade,
-				b = current.b + (final.b - current.b) * fade,
-			}
-		end
-
 		return utils.rgb_to_hex(current), 1
 	end,
 }

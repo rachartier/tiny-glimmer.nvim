@@ -172,7 +172,6 @@ function AnimationEffect:update(refresh_interval_ms)
 	local progress = math.min(elapsed_time / duration, 1)
 	local effect
 
-	print(self.type)
 	if self.type == "custom" then
 		effect = self.settings.effect
 	else

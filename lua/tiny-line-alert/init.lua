@@ -5,7 +5,7 @@ local M = {}
 M.config = {
 	enabled = true,
 	default_animation = "left_to_right",
-	update_ms = 6,
+	update_ms = 1,
 	animations = {
 		fade = {
 			duration = 250,
@@ -14,20 +14,38 @@ M.config = {
 		},
 		bounce = {
 			duration = 500,
-			start_color = "#98C379",
-			end_color = "#8087a2",
-			bounce_height = 1.5,
+			start_color = "#8087a2",
+			end_color = "#24273a",
+			bounce_count = 1,
 		},
 		left_to_right = {
-			duration = 250,
-			start_color = "#61AFEF",
-			end_color = "NONE",
+			duration = 150,
+			start_color = "#8087a2",
+			end_color = "#363a4f",
+			overstay = 50,
 		},
+	},
+	virt_text = {
+		priority = 2048,
 	},
 }
 
 -- Namespace pour les extmarks
 local ns_id = vim.api.nvim_create_namespace("animate_copy_paste")
+
+local function get_hl(name)
+	local hl = vim.api.nvim_get_hl(0, {
+		name = name,
+		link = false,
+	})
+
+	return {
+		fg = hl.fg,
+		bg = hl.bg,
+		bold = hl.bold or false,
+		italic = hl.italic or false,
+	}
+end
 
 -- Gestionnaire d'animations
 local Animation = {}
@@ -40,7 +58,11 @@ function Animation.new(type, opts, region)
 	self.region = region
 	self.start_time = vim.loop.now()
 	self.is_running = true
-	self.copied_text = vim.api.nvim_buf_get_lines(0, region.start_line, region.end_line + 1, false)
+	self.regcontents = vim.v.event.regcontents or {}
+	self.regtype = vim.v.event.regtype
+	self.operator = vim.v.event.operator
+	self.hl_visual = get_hl("Visual")
+	self.virt_text = opts.virt_text or {}
 	return self
 end
 
@@ -81,21 +103,31 @@ local animations = {
 	end,
 
 	bounce = function(self, progress)
-		local bounce_progress = math.sin(progress * math.pi) * self.opts.bounce_height
+		local bounce_progress = math.abs(math.sin(progress * math.pi * self.opts.bounce_count))
 
 		local start_rgb = self:hex_to_rgb(self.opts.start_color)
 		local end_rgb = self:hex_to_rgb(self.opts.end_color)
 
 		local current_rgb = {
-			r = start_rgb.r + (end_rgb.r - start_rgb.r) * bounce_progress,
-			g = start_rgb.g + (end_rgb.g - start_rgb.g) * bounce_progress,
-			b = start_rgb.b + (end_rgb.b - start_rgb.b) * bounce_progress,
+			r = math.max(start_rgb.r + (end_rgb.r - start_rgb.r) * bounce_progress, 0),
+			g = math.max(start_rgb.g + (end_rgb.g - start_rgb.g) * bounce_progress, 0),
+			b = math.max(start_rgb.b + (end_rgb.b - start_rgb.b) * bounce_progress, 0),
 		}
-		return self:rgb_to_hex(current_rgb), bounce_progress
+
+		return self:rgb_to_hex(current_rgb), 1
 	end,
 
 	left_to_right = function(self, progress)
-		return self.opts.start_color, math.max(progress, 0.2)
+		local start_rgb = self:hex_to_rgb(self.opts.start_color)
+		local end_rgb = self:hex_to_rgb(self.opts.end_color)
+
+		local current_rgb = {
+			r = start_rgb.r + (end_rgb.r - start_rgb.r) * progress,
+			g = start_rgb.g + (end_rgb.g - start_rgb.g) * progress,
+			b = start_rgb.b + (end_rgb.b - start_rgb.b) * progress,
+		}
+
+		return self:rgb_to_hex(current_rgb), progress
 	end,
 }
 
@@ -130,73 +162,64 @@ function Animation:update()
 
 	vim.api.nvim_set_hl(0, "UpdateColor", {
 		bg = color,
-		fg = "None",
-		bold = true,
 	})
 
 	vim.api.nvim_buf_clear_namespace(0, ns_id, self.region.start_line, self.region.end_line + 1)
 
 	local text_to_animate = {}
 
-	for i, line in ipairs(self.copied_text) do
+	for i, line in ipairs(self.regcontents) do
 		local end_col = #line * animation_progress
-
-		if i == 1 then
-			if self.region.end_line == self.region.start_line then
-				end_col = self.region.end_col * animation_progress
+		if self.regtype:lower() == "v" then
+			local subline
+			if i == 1 then
+				if self.region.end_line == self.region.start_line then
+					end_col = self.region.end_col * animation_progress
+				end
+				subline = line:sub(1, end_col)
+			elseif i == #self.regcontents then
+				subline = line:sub(1, self.region.end_col * animation_progress)
+			else
+				subline = line:sub(1, end_col)
 			end
-			local subline = line:sub(self.region.start_col + 1, end_col)
-
+			table.insert(text_to_animate, {
+				line = i - 1,
+				start_col = (i == 1) and self.region.start_col or 0,
+				end_col = (i == #self.regcontents) and self.region.end_col or end_col,
+				virt_text = { subline, "UpdateColor" },
+			})
+		else
 			table.insert(text_to_animate, {
 				line = i - 1,
 				start_col = self.region.start_col,
 				end_col = end_col,
-				virt_text = { subline, "UpdateColor" },
-			})
-		elseif i == #self.copied_text then
-			local subline = line:sub(1, self.region.end_col * animation_progress)
-
-			table.insert(text_to_animate, {
-				line = i - 1,
-				start_col = 0,
-				end_col = self.region.end_col,
-				virt_text = { subline, "UpdateColor" },
-			})
-		else
-			local subline = line:sub(1, end_col)
-			table.insert(text_to_animate, {
-				line = i - 1,
-				start_col = 0,
-				end_col = #subline,
-				virt_text = { subline, "UpdateColor" },
+				virt_text = { line, "UpdateColor" },
 			})
 		end
 	end
 
 	for _, line in ipairs(text_to_animate) do
-		print("End col", line.end_col)
-		print(vim.inspect(line.virt_text))
-
 		local end_col_animation = math.ceil(line.end_col * animation_progress)
 		if end_col_animation < line.start_col then
 			end_col_animation = line.start_col
 		elseif end_col_animation == 0 then
 			end_col_animation = 1
 		end
-		print("End col animation", end_col_animation)
 
 		vim.api.nvim_buf_set_extmark(0, ns_id, self.region.start_line + line.line, line.start_col, {
-			-- end_col = end_col_animation - 1,
+			end_col = end_col_animation,
 			hl_group = "UpdateColor",
-			priority = 1000,
-			virt_text_pos = "overlay",
-			virt_text = { line.virt_text },
+			hl_mode = "blend",
+			priority = self.virt_text.priority or 1000,
+			strict = false,
 		})
 	end
 
 	if progress >= 1 then
 		self.is_running = false
-		vim.api.nvim_buf_clear_namespace(0, ns_id, self.region.start_line, self.region.end_line + 1)
+		vim.defer_fn(function()
+			vim.api.nvim_buf_clear_namespace(0, ns_id, self.region.start_line, self.region.end_line + 1)
+		end, self.opts.overstay or 0)
 	else
 		vim.defer_fn(function()
 			self:update()
@@ -211,13 +234,16 @@ function M.setup(opts)
 	-- Configure les highlight groups
 	setup_highlights(M.config)
 
-	-- Autocommands pour détecter les opérations de copier-coller
 	local group = vim.api.nvim_create_augroup("AnimateCopyPaste", { clear = true })
 
 	vim.api.nvim_create_autocmd("TextYankPost", {
 		group = group,
 		callback = function()
 			if not M.config.enabled then
+				return
+			end
+
+			if vim.v.event.operator == "d" then
 				return
 			end
 

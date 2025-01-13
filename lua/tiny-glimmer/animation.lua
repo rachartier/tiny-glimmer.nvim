@@ -24,7 +24,7 @@ local animation_effects = require("tiny-glimmer.effects")
 ---@param animation_settings table
 ---@return boolean, string?
 local function validate_settings(animation_type, animation_settings)
-	if not animation_effects[animation_type] then
+	if not animation_effects[animation_type] and not animation_type == "custom" then
 		return false, string.format("Invalid animation type: %s", animation_type)
 	end
 
@@ -170,8 +170,16 @@ function AnimationEffect:update(refresh_interval_ms)
 	local elapsed_time = current_time - self.start_time
 	local duration = calculate_duration(self.yanked_content, self.settings)
 	local progress = math.min(elapsed_time / duration, 1)
+	local effect
 
-	local color, animation_progress = animation_effects[self.type](self, progress)
+	print(self.type)
+	if self.type == "custom" then
+		effect = self.settings.effect
+	else
+		effect = animation_effects[self.type]
+	end
+
+	local color, animation_progress = effect(self, progress)
 
 	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = color })
 	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.selection.start_line, self.selection.end_line + 1)

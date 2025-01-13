@@ -46,6 +46,21 @@ M.config = {
 			max_duration = 600,
 			chars_for_max_duration = 20,
 		},
+		custom = {
+			max_duration = 350,
+			chars_for_max_duration = 40,
+			color = hl_visual_bg,
+
+			-- Custom effect function
+			-- @param self table The effect object
+			-- @param progress number The progress of the animation [0, 1]
+			--
+			-- Should return a color and a progress value
+			-- that represents how much of the animation should be drawn
+			effect = function(self, progress)
+				return self.settings.color, progress
+			end,
+		},
 	},
 	virt_text = {
 		priority = 2048,
@@ -115,7 +130,7 @@ function M.setup(options)
 
 			local yanked_content = vim.v.event.regcontents
 
-			local animation = AnimationEffect.new(
+			local animation, error_msg = AnimationEffect.new(
 				M.config.default_animation,
 				M.config.animations[M.config.default_animation],
 				selection,
@@ -124,6 +139,8 @@ function M.setup(options)
 
 			if animation ~= nil then
 				animation:update(M.config.refresh_interval_ms)
+			else
+				vim.notify("TinyGlimmer: " .. error_msg, vim.log.levels.ERROR)
 			end
 		end,
 	})
@@ -135,15 +152,18 @@ vim.api.nvim_create_user_command("TinyGlimmer", function(args)
 		M.config.enabled = true
 	elseif command == "disable" then
 		M.config.enabled = false
-	elseif animation_effects[command] then
+	elseif animation_effects[command] or command == "custom" then
 		M.config.default_animation = command
 	else
-		vim.notify("Usage: TinyGlimmer [enable|disable|fade|bounce|left_to_right|pulse|rainbow]", vim.log.levels.INFO)
+		vim.notify(
+			"Usage: TinyGlimmer [enable|disable|fade|bounce|left_to_right|pulse|rainbow|custom]",
+			vim.log.levels.INFO
+		)
 	end
 end, {
 	nargs = 1,
 	complete = function()
-		return { "enable", "disable", "fade", "bounce", "left_to_right", "pulse", "rainbow" }
+		return { "enable", "disable", "fade", "bounce", "left_to_right", "pulse", "rainbow", "custom" }
 	end,
 })
 

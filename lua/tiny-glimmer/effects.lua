@@ -2,8 +2,8 @@ local utils = require("tiny-glimmer.utils")
 
 return {
 	fade = function(self, progress)
-		local initial = utils.hex_to_rgb(self.settings.initial_color)
-		local final = utils.hex_to_rgb(self.settings.final_color)
+		local initial = utils.hex_to_rgb(self.settings.from_color)
+		local final = utils.hex_to_rgb(self.settings.to_color)
 
 		local current = {
 			r = initial.r + (final.r - initial.r) * progress,
@@ -17,8 +17,8 @@ return {
 	bounce = function(self, progress)
 		local oscillation = math.abs(math.sin(progress * math.pi * self.settings.oscillation_count))
 
-		local initial = utils.hex_to_rgb(self.settings.initial_color)
-		local final = utils.hex_to_rgb(self.settings.final_color)
+		local initial = utils.hex_to_rgb(self.settings.from_color)
+		local final = utils.hex_to_rgb(self.settings.to_color)
 
 		local current = {
 			r = math.max(initial.r + (final.r - initial.r) * oscillation, 0),
@@ -30,8 +30,8 @@ return {
 	end,
 
 	left_to_right = function(self, progress)
-		local initial = utils.hex_to_rgb(self.settings.initial_color)
-		local final = utils.hex_to_rgb(self.settings.final_color)
+		local initial = utils.hex_to_rgb(self.settings.from_color)
+		local final = utils.hex_to_rgb(self.settings.to_color)
 
 		local current = {
 			r = initial.r + (final.r - initial.r) * math.min(0.9, progress),
@@ -42,8 +42,8 @@ return {
 		return utils.rgb_to_hex(current), progress
 	end,
 	pulse = function(self, progress)
-		local initial = utils.hex_to_rgb(self.settings.initial_color)
-		local final = utils.hex_to_rgb(self.settings.final_color)
+		local initial = utils.hex_to_rgb(self.settings.from_color)
+		local final = utils.hex_to_rgb(self.settings.to_color)
 
 		local pulse = math.abs(math.sin(progress * math.pi * self.settings.pulse_count))
 		pulse = pulse * self.settings.intensity
@@ -79,7 +79,7 @@ return {
 		}
 
 		if progress >= 0.9 then
-			local final = utils.hex_to_rgb(self.settings.final_color)
+			local final = utils.hex_to_rgb(self.settings.to_color)
 			local fade = (progress - 0.9) * 10
 			current = {
 				r = current.r + (final.r - current.r) * fade,

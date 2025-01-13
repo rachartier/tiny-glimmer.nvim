@@ -16,66 +16,79 @@ M.config = {
 		fade = {
 			max_duration = 250,
 			chars_for_max_duration = 10,
-			initial_color = hl_visual_bg,
-			final_color = hl_normal_bg,
+			from_color = hl_visual_bg,
+			to_color = hl_normal_bg,
 		},
 		bounce = {
 			max_duration = 500,
 			chars_for_max_duration = 20,
 			oscillation_count = 1,
-			initial_color = hl_visual_bg,
-			final_color = hl_normal_bg,
+			from_color = hl_visual_bg,
+			to_color = hl_normal_bg,
 		},
 		left_to_right = {
 			max_duration = 350,
 			chars_for_max_duration = 40,
 			lingering_time = 50,
-			initial_color = hl_visual_bg,
-			final_color = hl_normal_bg,
+			from_color = hl_visual_bg,
+			to_color = hl_normal_bg,
 		},
 		pulse = {
 			max_duration = 400,
 			chars_for_max_duration = 15,
 			pulse_count = 2,
 			intensity = 1.2,
-			initial_color = hl_visual_bg,
-			final_color = hl_normal_bg,
+			from_color = hl_visual_bg,
+			to_color = hl_normal_bg,
 		},
 		rainbow = {
 			max_duration = 600,
 			chars_for_max_duration = 20,
-			initial_color = hl_visual_bg,
-			final_color = hl_normal_bg,
 		},
 	},
 	virt_text = {
 		priority = 2048,
 	},
 }
-local function configure_highlights(options)
+local function sanitize_highlights(options)
 	for name, highlight_settings in pairs(options.animations) do
-		if highlight_settings.link then
-			vim.api.nvim_set_hl(0, name, {
-				link = highlight_settings.link,
-				default = highlight_settings.default,
-			})
-		else
-			vim.api.nvim_set_hl(0, name, {
-				fg = highlight_settings.fg,
-				bg = highlight_settings.bg,
-				bold = highlight_settings.bold,
-				italic = highlight_settings.italic,
-				default = highlight_settings.default,
-			})
+		print(name)
+		print(vim.inspect(highlight_settings))
+		if highlight_settings.from_color and highlight_settings.from_color:sub(1, 1) ~= "#" then
+			local converted_from_color = utils.int_to_hex(utils.get_highlight(highlight_settings.from_color).bg)
+			highlight_settings.from_color = converted_from_color
+
+			if converted_from_color:lower() == "none" then
+				vim.notify(
+					"TinyGlimmer: to_color is set to None for "
+						.. name
+						.. " animation\nDefaulting to CurSearch highlight",
+					vim.log.levels.WARN
+				)
+				highlight_settings.from_color = hl_visual_bg
+			end
+		end
+
+		if highlight_settings.to_color and highlight_settings.to_color:sub(1, 1) ~= "#" then
+			local converted_to_color = utils.int_to_hex(utils.get_highlight(highlight_settings.to_color).bg)
+			highlight_settings.to_color = converted_to_color
+
+			if converted_to_color:lower() == "none" then
+				vim.notify(
+					"TinyGlimmer: to_color is set to None for " .. name .. " animation\nDefaulting to Normal highlight",
+					vim.log.levels.WARN
+				)
+				highlight_settings.to_color = hl_normal_bg
+			end
 		end
 	end
 end
 
 function M.setup(options)
 	M.config = vim.tbl_deep_extend("force", M.config, options or {})
-	configure_highlights(M.config)
+	sanitize_highlights(M.config)
 
-	local animation_group = vim.api.nvim_create_augroup("AnimateCopyPaste", { clear = true })
+	local animation_group = vim.api.nvim_create_augroup("TinyGlimmer", { clear = true })
 
 	vim.api.nvim_create_autocmd("TextYankPost", {
 		group = animation_group,
@@ -176,6 +189,13 @@ end
 --- Toggle the plugin on or off
 M.toggle = function()
 	M.config.enabled = not M.config.enabled
+end
+
+--- Get the background highlight color for the given highlight name
+--- @param hl_name string
+--- @return string Hex color
+M.get_background_hl = function(hl_name)
+	return utils.int_to_hex(utils.get_highlight(hl_name).bg)
 end
 
 return M

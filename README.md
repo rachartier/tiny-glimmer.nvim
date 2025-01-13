@@ -84,6 +84,27 @@ require('tiny-glimmer').setup({
 })
 ```
 
+For each animation, you can configure the `from_color` and `to_color` options to customize the colors used in the animation. These options should be valid highlight group names, or hexadecimal colors.
+
+Example:
+```lua
+require('tiny-glimmer').setup({
+    animations = {
+        fade = {
+            from_color = "DiffDelete",
+            to_color = "DiffAdd",
+        },
+        bounce = {
+            from_color = "#ff0000",
+            to_color = "#00ff00",
+        },
+    },
+})
+```
+
+::: warning
+Only `rainbow` animation does not uses `from_color` and `to_color` options.
+
 ### Animation Settings
 
 Each animation type has its own configuration options:

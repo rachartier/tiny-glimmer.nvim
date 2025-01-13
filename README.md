@@ -7,9 +7,7 @@ A tiny Neovim plugin that adds subtle animations to yank/paste operations.
 
 ## ✨ Features
 
-
-https://github.com/user-attachments/assets/e47ab8d3-33d7-41f4-a44a-c8d327382637
-
+![tiny_glimmer_demo](https://github.com/user-attachments/assets/f662b9d3-98f5-4683-97e4-c74fe98e2f0e)
 
 - Smooth animations for yank and paste operations
 - Multiple animation styles:

@@ -52,6 +52,11 @@ require('tiny-glimmer').setup({
     enabled = true,
     default_animation = "fade",
     refresh_interval_ms = 6,
+
+    -- Only use if you have a transparent background
+    -- It will override the highlight group background color for `to_color` in all animations
+    transparency_color = nil,
+
     animations = {
         fade = {
             max_duration = 250,
@@ -102,7 +107,7 @@ require('tiny-glimmer').setup({
 })
 ```
 
-> [!WARNING]  
+> [!WARNING]
 Only `rainbow` animation does not uses `from_color` and `to_color` options.
 
 ### Animation Settings

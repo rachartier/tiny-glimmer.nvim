@@ -12,6 +12,7 @@ M.config = {
 	enabled = true,
 	default_animation = "fade",
 	refresh_interval_ms = 6,
+	transparency_color = nil,
 	animations = {
 		fade = {
 			max_duration = 250,
@@ -57,6 +58,11 @@ local function sanitize_highlights(options)
 			highlight_settings.from_color = converted_from_color
 
 			if converted_from_color:lower() == "none" then
+				if options.transparency_color then
+					highlight_settings.from_color = options.transparency_color
+					return
+				end
+
 				vim.notify(
 					"TinyGlimmer: to_color is set to None for "
 						.. name
@@ -68,6 +74,11 @@ local function sanitize_highlights(options)
 		end
 
 		if highlight_settings.to_color and highlight_settings.to_color:sub(1, 1) ~= "#" then
+			if options.transparency_color then
+				highlight_settings.to_color = options.transparency_color
+				return
+			end
+
 			local converted_to_color = utils.int_to_hex(utils.get_highlight(highlight_settings.to_color).bg)
 			highlight_settings.to_color = converted_to_color
 

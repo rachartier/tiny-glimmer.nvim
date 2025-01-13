@@ -126,9 +126,9 @@ Example:
     })
 <
 
-warning Only `rainbow` animation does not uses `from_color` and `to_color`
-options.
 
+  [!WARNING] Only `rainbow` animation does not uses `from_color` and `to_color`
+  options.
 
 ANIMATION SETTINGS ~
 

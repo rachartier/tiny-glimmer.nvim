@@ -16,6 +16,7 @@ A tiny Neovim plugin that adds subtle animations to yank operations.
   - `left_to_right`: Linear left-to-right animation
   - `pulse`: Pulsating highlight effect
   - `rainbow`: Rainbow transition
+  - `custom`: Custom animation that you can define
 
 ## 📋 Requirements
 
@@ -82,6 +83,21 @@ require('tiny-glimmer').setup({
             max_duration = 600,
             chars_for_max_duration = 20,
         },
+        custom = {
+            max_duration = 350,
+            chars_for_max_duration = 40,
+            color = hl_visual_bg,
+
+            -- Custom effect function
+            -- @param self table The effect object
+            -- @param progress number The progress of the animation [0, 1]
+            --
+            -- Should return a color and a progress value
+            -- that represents how much of the animation should be drawn
+            effect = function(self, progress)
+                return self.settings.color, progress
+            end,
+        },
     },
     virt_text = {
         priority = 2048,
@@ -130,6 +146,7 @@ Each animation type has its own configuration options:
 - `:TinyGlimmer left_to_right` - Switch to left-to-right animation
 - `:TinyGlimmer pulse` - Switch to pulse animation
 - `:TinyGlimmer rainbow` - Switch to rainbow animation
+- `:TinyGlimmer custom` - Switch to your custom animation
 
 ## 🛠️ API
 

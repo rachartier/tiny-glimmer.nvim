@@ -1,4 +1,4 @@
-# 🌟 tiny-glimmer
+# 🌟 tiny-glimmer.nvim
 
 A tiny Neovim plugin that adds subtle animations to yank/paste operations.
 

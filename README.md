@@ -1,6 +1,6 @@
 # 🌟 tiny-glimmer.nvim
 
-A tiny Neovim plugin that adds subtle animations to yank/paste operations.
+A tiny Neovim plugin that adds subtle animations to yank operations.
 
 ![Neovim version](https://img.shields.io/badge/Neovim-0.10+-blueviolet.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
@@ -9,7 +9,7 @@ A tiny Neovim plugin that adds subtle animations to yank/paste operations.
 
 ![tiny_glimmer_demo](https://github.com/user-attachments/assets/f662b9d3-98f5-4683-97e4-c74fe98e2f0e)
 
-- Smooth animations for yank and paste operations
+- Smooth animations for yank operations
 - Multiple animation styles:
   - `fade`: Simple fade in/out effect
   - `bounce`: Bouncing transition

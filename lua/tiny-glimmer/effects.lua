@@ -5,10 +5,12 @@ return {
 		local initial = utils.hex_to_rgb(self.settings.from_color)
 		local final = utils.hex_to_rgb(self.settings.to_color)
 
+		local ease = progress < 0.5 and 2 * progress * progress or -1 + (4 - 2 * progress) * progress
+
 		local current = {
-			r = initial.r + (final.r - initial.r) * progress,
-			g = initial.g + (final.g - initial.g) * progress,
-			b = initial.b + (final.b - initial.b) * progress,
+			r = initial.r + (final.r - initial.r) * ease,
+			g = initial.g + (final.g - initial.g) * ease,
+			b = initial.b + (final.b - initial.b) * ease,
 		}
 
 		return utils.rgb_to_hex(current), 1

@@ -102,7 +102,7 @@ require('tiny-glimmer').setup({
 })
 ```
 
-::: warning
+> [!WARNING]  
 Only `rainbow` animation does not uses `from_color` and `to_color` options.
 
 ### Animation Settings

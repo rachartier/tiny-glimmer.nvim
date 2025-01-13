@@ -118,6 +118,12 @@ require('tiny-glimmer').disable()
 require('tiny-glimmer').toggle()
 ```
 
+
+## ❓FAQ
+
+### Why is there two animations playing at the same time?
+You should disable your own `TextYankPost` autocmd that calls `vim.highlight.on_yank`
+
 ## 📝 License
 
 MIT

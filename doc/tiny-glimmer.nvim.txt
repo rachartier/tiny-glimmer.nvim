@@ -1,0 +1,168 @@
+*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 13
+
+==============================================================================
+Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
+
+1. tiny-glimmer.nvim                     |tiny-glimmer.nvim-tiny-glimmer.nvim|
+  - Features                    |tiny-glimmer.nvim-tiny-glimmer.nvim-features|
+  - Requirements            |tiny-glimmer.nvim-tiny-glimmer.nvim-requirements|
+  - Installation            |tiny-glimmer.nvim-tiny-glimmer.nvim-installation|
+  - Configuration          |tiny-glimmer.nvim-tiny-glimmer.nvim-configuration|
+  - Commands                    |tiny-glimmer.nvim-tiny-glimmer.nvim-commands|
+  - API                              |tiny-glimmer.nvim-tiny-glimmer.nvim-api|
+  - FAQ                              |tiny-glimmer.nvim-tiny-glimmer.nvim-faq|
+  - License                      |tiny-glimmer.nvim-tiny-glimmer.nvim-license|
+2. Links                                             |tiny-glimmer.nvim-links|
+
+==============================================================================
+1. tiny-glimmer.nvim                     *tiny-glimmer.nvim-tiny-glimmer.nvim*
+
+A tiny Neovim plugin that adds subtle animations to yank operations.
+
+
+
+
+FEATURES                        *tiny-glimmer.nvim-tiny-glimmer.nvim-features*
+
+- Smooth animations for yank operations
+- Multiple animation styles:
+    - `fade`Simple fade in/out effect
+    - `bounce`Bouncing transition
+    - `left_to_right`Linear left-to-right animation
+    - `pulse`Pulsating highlight effect
+    - `rainbow`Rainbow transition
+
+
+REQUIREMENTS                *tiny-glimmer.nvim-tiny-glimmer.nvim-requirements*
+
+- Neovim >= 0.10
+
+
+INSTALLATION                *tiny-glimmer.nvim-tiny-glimmer.nvim-installation*
+
+Using lazy.nvim <https://github.com/folke/lazy.nvim>
+
+>lua
+    {
+        "rachartier/tiny-glimmer.nvim",
+        event = "TextYankPost",
+        opts = {
+            -- your configuration
+        },
+    }
+<
+
+Usingpacker.nvim <https://github.com/wbthomason/packer.nvim>
+
+>lua
+    use {
+        'rachartier/tiny-glimmer.nvim',
+        config = function()
+            require('tiny-glimmer').setup()
+        end
+    }
+<
+
+
+CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
+
+Here’s the default configuration:
+
+>lua
+    require('tiny-glimmer').setup({
+        enabled = true,
+        default_animation = "fade",
+        refresh_interval_ms = 6,
+        animations = {
+            fade = {
+                max_duration = 250,
+                chars_for_max_duration = 10,
+            },
+            bounce = {
+                max_duration = 500,
+                chars_for_max_duration = 20,
+                oscillation_count = 1,
+            },
+            left_to_right = {
+                max_duration = 350,
+                chars_for_max_duration = 40,
+                lingering_time = 50,
+            },
+            pulse = {
+                max_duration = 400,
+                chars_for_max_duration = 15,
+                pulse_count = 2,
+                intensity = 1.2,
+            },
+            rainbow = {
+                max_duration = 600,
+                chars_for_max_duration = 20,
+            },
+        },
+        virt_text = {
+            priority = 2048,
+        },
+    })
+<
+
+
+ANIMATION SETTINGS ~
+
+Each animation type has its own configuration options:
+
+- `max_duration`Maximum duration of the animation in milliseconds
+- `chars_for_max_duration`Number of characters that will result in max duration
+- `lingering_time`How long the animation stays visible after completion (for applicable animations)
+- `oscillation_count`Number of bounces (for bounce animation)
+- `pulse_count`Number of pulses (for pulse animation)
+- `intensity`Animation intensity multiplier (for pulse animation)
+
+
+COMMANDS                        *tiny-glimmer.nvim-tiny-glimmer.nvim-commands*
+
+- `:TinyGlimmer enable` - Enable animations
+- `:TinyGlimmer disable` - Disable animations
+- `:TinyGlimmer fade` - Switch to fade animation
+- `:TinyGlimmer bounce` - Switch to bounce animation
+- `:TinyGlimmer left_to_right` - Switch to left-to-right animation
+- `:TinyGlimmer pulse` - Switch to pulse animation
+- `:TinyGlimmer rainbow` - Switch to rainbow animation
+
+
+API                                  *tiny-glimmer.nvim-tiny-glimmer.nvim-api*
+
+>lua
+    -- Enable animations
+    require('tiny-glimmer').enable()
+    
+    -- Disable animations
+    require('tiny-glimmer').disable()
+    
+    -- Toggle animations
+    require('tiny-glimmer').toggle()
+<
+
+
+FAQ                                  *tiny-glimmer.nvim-tiny-glimmer.nvim-faq*
+
+
+WHY IS THERE TWO ANIMATIONS PLAYING AT THE SAME TIME? ~
+
+You should disable your own `TextYankPost` autocmd that calls
+`vim.highlight.on_yank`
+
+
+LICENSE                          *tiny-glimmer.nvim-tiny-glimmer.nvim-license*
+
+MIT
+
+==============================================================================
+2. Links                                             *tiny-glimmer.nvim-links*
+
+1. *Neovim version*: https://img.shields.io/badge/Neovim-0.10+-blueviolet.svg
+2. *License*: https://img.shields.io/badge/license-MIT-blue.svg
+3. *tiny_glimmer_demo*: https://github.com/user-attachments/assets/f662b9d3-98f5-4683-97e4-c74fe98e2f0e
+
+Generated by panvimdoc <https://github.com/kdheepak/panvimdoc>
+
+vim:tw=78:ts=8:noet:ft=help:norl:

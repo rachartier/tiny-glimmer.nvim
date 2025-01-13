@@ -128,7 +128,7 @@ function M.setup(options)
 	vim.api.nvim_create_autocmd("TextYankPost", {
 		group = animation_group,
 		callback = function()
-			if not M.config.enabled or vim.v.event.operator == "d" then
+			if not M.config.enabled or vim.v.event.operator == "d" or vim.v.event.operator == "c" then
 				return
 			end
 

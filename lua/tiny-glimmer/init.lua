@@ -66,45 +66,54 @@ M.config = {
 		priority = 2048,
 	},
 }
+
 local function sanitize_highlights(options)
-	for name, highlight_settings in pairs(options.animations) do
-		if highlight_settings.from_color and highlight_settings.from_color:sub(1, 1) ~= "#" then
-			local converted_from_color = utils.int_to_hex(utils.get_highlight(highlight_settings.from_color).bg)
-			highlight_settings.from_color = converted_from_color
+	local normal_bg = utils.get_highlight("Normal").bg
+	local is_transparent = normal_bg == nil or normal_bg == "None"
 
-			if converted_from_color:lower() == "none" then
-				if options.transparency_color then
-					highlight_settings.from_color = options.transparency_color
-					return
-				end
+	if is_transparent and not options.transparency_color then
+		vim.notify(
+			"TinyGlimmer: Normal highlight group has a transparent background.\n"
+				.. "Please set the transparency_color option to a valid color",
+			vim.log.levels.WARN
+		)
+	end
 
-				vim.notify(
-					"TinyGlimmer: to_color is set to None for "
-						.. name
-						.. " animation\nDefaulting to CurSearch highlight",
-					vim.log.levels.WARN
-				)
-				highlight_settings.from_color = hl_visual_bg
-			end
+	local function process_color(color, highlight_name, is_from_color)
+		if not color or color:sub(1, 1) == "#" then
+			return color
 		end
 
-		if highlight_settings.to_color and highlight_settings.to_color:sub(1, 1) ~= "#" then
+		local converted_color = utils.int_to_hex(utils.get_highlight(color).bg)
+
+		if converted_color:lower() == "none" then
 			if options.transparency_color then
-				highlight_settings.to_color = options.transparency_color
-				return
+				return options.transparency_color
 			end
 
-			local converted_to_color = utils.int_to_hex(utils.get_highlight(highlight_settings.to_color).bg)
-			highlight_settings.to_color = converted_to_color
-
-			if converted_to_color:lower() == "none" then
+			if not is_transparent then
+				local default_highlight = is_from_color and "CurSearch" or "Normal"
 				vim.notify(
-					"TinyGlimmer: to_color is set to None for " .. name .. " animation\nDefaulting to Normal highlight",
+					string.format(
+						"TinyGlimmer: %s_color is set to None for %s animation\n" .. "Defaulting to %s highlight",
+						is_from_color and "from" or "to",
+						highlight_name,
+						default_highlight
+					),
 					vim.log.levels.WARN
 				)
-				highlight_settings.to_color = hl_normal_bg
+				return is_from_color and hl_visual_bg or hl_normal_bg
+			else
+				return "#000000"
 			end
 		end
+
+		return converted_color
+	end
+
+	for name, highlight in pairs(options.animations) do
+		highlight.from_color = process_color(highlight.from_color, name, true)
+		highlight.to_color = process_color(highlight.to_color, name, false)
 	end
 end
 

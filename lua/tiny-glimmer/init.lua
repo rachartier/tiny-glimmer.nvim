@@ -1,7 +1,7 @@
 local M = {}
 
 local utils = require("tiny-glimmer.utils")
-local animation_effects = require("tiny-glimmer.effects")
+local effects = require("tiny-glimmer.effects")
 
 local AnimationEffect = require("tiny-glimmer.animation")
 
@@ -15,7 +15,7 @@ M.config = {
 	transparency_color = nil,
 	animations = {
 		fade = {
-			max_duration = 250,
+			max_duration = 300,
 			chars_for_max_duration = 10,
 			from_color = hl_visual_bg,
 			to_color = hl_normal_bg,
@@ -51,12 +51,12 @@ M.config = {
 			chars_for_max_duration = 40,
 			color = hl_visual_bg,
 
-			-- Custom effect function
-			-- @param self table The effect object
-			-- @param progress number The progress of the animation [0, 1]
-			--
-			-- Should return a color and a progress value
-			-- that represents how much of the animation should be drawn
+			--- Custom effect function
+			--- @param self table The effect object
+			--- @param progress number The progress of the animation [0, 1]
+			---
+			--- Should return a color and a progress value
+			--- that represents how much of the animation should be drawn
 			effect = function(self, progress)
 				return self.settings.color, progress
 			end,
@@ -161,7 +161,7 @@ vim.api.nvim_create_user_command("TinyGlimmer", function(args)
 		M.config.enabled = true
 	elseif command == "disable" then
 		M.config.enabled = false
-	elseif animation_effects[command] or command == "custom" then
+	elseif effects[command] or command == "custom" then
 		M.config.default_animation = command
 	else
 		vim.notify(

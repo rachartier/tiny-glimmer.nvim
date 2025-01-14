@@ -98,14 +98,12 @@ local function calculate_end_position(self, line_content, line_index, animation_
 	local end_position = #line_content * animation_progress
 
 	if string.byte(self.yank_type) == 22 then
-		return self.selection.end_col * animation_progress
+		return (self.selection.start_col + #line_content) * animation_progress
 	end
 
 	if self.yank_type:lower() == "v" then
-		if line_index == 1 then
-			end_position = (self.selection.start_col + #line_content) * animation_progress
-		elseif line_index == #self.selection then
-			end_position = (self.selection.start_col + #line_content) * animation_progress
+		if line_index == 1 or line_index == #self.selection then
+			return (self.selection.start_col + #line_content) * animation_progress
 		end
 	end
 

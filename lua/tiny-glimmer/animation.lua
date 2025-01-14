@@ -28,7 +28,7 @@ local function validate_settings(animation_type, animation_settings)
 		return false, string.format("Invalid animation type: %s", animation_type)
 	end
 
-	local required_fields = { "max_duration", "chars_for_max_duration" }
+	local required_fields = { "min_duration", "max_duration", "chars_for_max_duration" }
 	for _, field in ipairs(required_fields) do
 		if not animation_settings[field] then
 			return false, string.format("Missing required setting: %s", field)
@@ -85,6 +85,11 @@ local function calculate_duration(content, settings)
 	end
 
 	local calculated_duration = #content[1] * settings.max_duration / settings.chars_for_max_duration
+
+	if calculated_duration < settings.min_duration then
+		return settings.min_duration
+	end
+
 	return math.min(calculated_duration, settings.max_duration)
 end
 

@@ -18,12 +18,14 @@ M.config = {
 	animations = {
 		fade = {
 			max_duration = 300,
+			min_duration = 200,
 			chars_for_max_duration = 10,
 			from_color = hl_visual_bg,
 			to_color = hl_normal_bg,
 		},
 		bounce = {
 			max_duration = 500,
+			min_duration = 400,
 			chars_for_max_duration = 20,
 			oscillation_count = 1,
 			from_color = hl_visual_bg,
@@ -31,13 +33,15 @@ M.config = {
 		},
 		left_to_right = {
 			max_duration = 350,
-			chars_for_max_duration = 40,
+			min_duration = 150,
+			chars_for_max_duration = 25,
 			lingering_time = 50,
 			from_color = hl_visual_bg,
 			to_color = hl_normal_bg,
 		},
 		pulse = {
-			max_duration = 400,
+			max_duration = 600,
+			min_duration = 400,
 			chars_for_max_duration = 15,
 			pulse_count = 2,
 			intensity = 1.2,
@@ -46,10 +50,12 @@ M.config = {
 		},
 		rainbow = {
 			max_duration = 600,
+			min_duration = 350,
 			chars_for_max_duration = 20,
 		},
 		custom = {
 			max_duration = 350,
+			min_duration = 200,
 			chars_for_max_duration = 40,
 			color = hl_visual_bg,
 
@@ -179,43 +185,7 @@ end, {
 })
 
 if DEBUG then
-	vim.api.nvim_create_user_command("TinyGlimmerTest", function(args)
-		local buf_content = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-
-		for i, line in ipairs(buf_content) do
-			if #line > 0 then
-				local selection = {
-					start_line = i - 1,
-					start_col = 0,
-					end_line = i - 1,
-					end_col = #line,
-				}
-
-				local animation_type = "none"
-				if line:lower():find("fade") then
-					animation_type = "fade"
-				elseif line:lower():find("bounce") then
-					animation_type = "bounce"
-				elseif line:lower():find("left to right") then
-					animation_type = "left_to_right"
-				elseif line:lower():find("pulse") then
-					animation_type = "pulse"
-				elseif line:lower():find("rainbow") then
-					animation_type = "rainbow"
-				end
-
-				if animation_type ~= "none" then
-					local animation_config = M.config.animations[animation_type]
-
-					local animation = AnimationEffect.new(animation_type, animation_config, selection, { line })
-
-					if animation ~= nil then
-						animation:update(M.config.refresh_interval_ms)
-					end
-				end
-			end
-		end
-	end, { nargs = 0 })
+	vim.api.nvim_create_user_command("TinyGlimmerTest", function(args) end, { nargs = 0 })
 end
 
 --- Disable the animation

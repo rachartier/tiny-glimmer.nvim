@@ -102,7 +102,7 @@ local function calculate_end_position(self, line_content, line_index, animation_
 	end
 
 	if self.yank_type:lower() == "v" then
-		if line_index == 1 and self.selection.end_line == self.selection.start_line then
+		if line_index == 1 then
 			end_position = (self.selection.start_col + #line_content) * animation_progress
 		elseif line_index == #self.selection then
 			end_position = (self.selection.start_col + #line_content) * animation_progress

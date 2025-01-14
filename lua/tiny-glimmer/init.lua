@@ -7,7 +7,7 @@ local effects = require("tiny-glimmer.effects")
 
 local AnimationEffect = require("tiny-glimmer.animation")
 
-local hl_visual_bg = utils.int_to_hex(utils.get_highlight("CurSearch").bg)
+local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
 local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 
 M.config = {
@@ -100,7 +100,7 @@ local function sanitize_highlights(options)
 			end
 
 			if not is_transparent then
-				local default_highlight = is_from_color and "CurSearch" or "Normal"
+				local default_highlight = is_from_color and "Visual" or "Normal"
 				vim.notify(
 					string.format(
 						"TinyGlimmer: %s_color is set to None for %s animation\n" .. "Defaulting to %s highlight",

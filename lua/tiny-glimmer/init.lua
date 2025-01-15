@@ -1,7 +1,6 @@
 local M = {}
 
-DEBUG = false
-
+local search = require("tiny-glimmer.search")
 local utils = require("tiny-glimmer.utils")
 local effects = require("tiny-glimmer.effects")
 
@@ -12,6 +11,16 @@ local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 
 M.config = {
 	enabled = true,
+
+	search = {
+		enabled = false,
+		default_animation = "pulse",
+
+		--- Keys to navigate to the next match after `n` or `N`
+		next_mapping = "zzzv", -- Can be empty or nil
+		prev_mapping = "zzzv", -- Can be empty or nil
+	},
+
 	default_animation = "fade",
 	refresh_interval_ms = 6,
 	transparency_color = nil,
@@ -33,7 +42,7 @@ M.config = {
 		},
 		left_to_right = {
 			max_duration = 350,
-			min_duration = 150,
+			min_duration = 350,
 			chars_for_max_duration = 25,
 			lingering_time = 50,
 			from_color = hl_visual_bg,
@@ -161,6 +170,10 @@ function M.setup(options)
 			end
 		end,
 	})
+
+	if M.config.search.enabled then
+		vim.opt.hlsearch = false
+	end
 end
 
 vim.api.nvim_create_user_command("TinyGlimmer", function(args)
@@ -184,10 +197,6 @@ end, {
 	end,
 })
 
-if DEBUG then
-	vim.api.nvim_create_user_command("TinyGlimmerTest", function(args) end, { nargs = 0 })
-end
-
 --- Disable the animation
 M.disable = function()
 	M.config.enabled = false
@@ -208,6 +217,13 @@ end
 --- @return string Hex color
 M.get_background_hl = function(hl_name)
 	return utils.int_to_hex(utils.get_highlight(hl_name).bg)
+end
+
+M.search_next = function()
+	search.search_next(M.config.search, M.config.animations)
+end
+M.search_prev = function()
+	search.search_prev(M.config.search, M.config.animations)
 end
 
 return M

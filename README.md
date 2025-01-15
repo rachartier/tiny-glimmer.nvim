@@ -5,6 +5,9 @@ A tiny Neovim plugin that adds subtle animations to various operations.
 ![Neovim version](https://img.shields.io/badge/Neovim-0.10+-blueviolet.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
+> [!WARNING]
+>This plugin is still in beta. It is possible that some changes will break the plugin.
+
 ## ✨ Features
 
 ![tiny_glimmer_demo](https://github.com/user-attachments/assets/f662b9d3-98f5-4683-97e4-c74fe98e2f0e)

@@ -24,6 +24,9 @@ M.config = {
 		paste = {
 			enabled = true,
 			default_animation = "reverse_fade",
+
+			paste_mapping = "=`]", -- Can be empty or nil
+			Paste_mapping = "=`]", -- Can be empty or nil
 		},
 	},
 

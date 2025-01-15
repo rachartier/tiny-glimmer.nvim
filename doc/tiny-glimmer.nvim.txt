@@ -18,7 +18,7 @@ Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
 ==============================================================================
 1. tiny-glimmer.nvim                     *tiny-glimmer.nvim-tiny-glimmer.nvim*
 
-A tiny Neovim plugin that adds subtle animations to yank operations.
+A tiny Neovim plugin that adds subtle animations to various operations.
 
 
 

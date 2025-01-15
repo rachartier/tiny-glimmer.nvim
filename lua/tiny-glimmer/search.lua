@@ -15,7 +15,7 @@ local function search(opts, direction, animations, animation_refresh)
 	end
 
 	local keys = direction == "w" and opts.next_mapping or opts.prev_mapping
-	if keys ~= nil and key ~= "" then
+	if keys ~= nil and keys ~= "" then
 		vim.fn.feedkeys(direction == "w" and opts.next_mapping or opts.prev_mapping)
 	end
 

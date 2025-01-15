@@ -1,6 +1,6 @@
 # 🌟 tiny-glimmer.nvim
 
-A tiny Neovim plugin that adds subtle animations to yank operations.
+A tiny Neovim plugin that adds subtle animations to various operations.
 
 ![Neovim version](https://img.shields.io/badge/Neovim-0.10+-blueviolet.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)

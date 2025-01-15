@@ -78,7 +78,7 @@ require('tiny-glimmer').setup({
             prev_mapping = "zzzv", -- Can be empty or nil
         },
         paste = {
-            enabled = false,
+            enabled = true,
             default_animation = "reverse_fade",
 
             paste_mapping = "=`]", -- Can be empty or nil

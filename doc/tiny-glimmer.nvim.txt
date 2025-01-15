@@ -108,7 +108,7 @@ Here’s the default configuration:
                 prev_mapping = "zzzv", -- Can be empty or nil
             },
             paste = {
-                enabled = false,
+                enabled = true,
                 default_animation = "reverse_fade",
             },
         },

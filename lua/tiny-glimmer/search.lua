@@ -2,7 +2,7 @@ local M = {}
 
 local AnimationEffect = require("tiny-glimmer.animation")
 
-local function search(opts, direction, animations)
+local function search(opts, direction, animations, animation_refresh)
 	local search_pattern = vim.fn.getreg("/")
 	local buf = vim.api.nvim_get_current_buf()
 	vim.fn.search(search_pattern, direction)
@@ -26,18 +26,18 @@ local function search(opts, direction, animations)
 		AnimationEffect.new(opts.default_animation, animations[opts.default_animation], selection, matches[1].text)
 
 	if animation then
-		animation:update(1)
+		animation:update(animation_refresh)
 	else
 		vim.notify("TinyGlimmer: " .. error_msg, vim.log.levels.ERROR)
 	end
 end
 
-function M.search_next(opts, animations)
-	search(opts, "w", animations)
+function M.search_next(opts, animations, animation_refresh)
+	search(opts, "w", animations, animation_refresh)
 end
 
-function M.search_prev(opts, animations)
-	search(opts, "bw", animations)
+function M.search_prev(opts, animations, animation_refresh)
+	search(opts, "bw", animations, animation_refresh)
 end
 
 return M

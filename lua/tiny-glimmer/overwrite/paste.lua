@@ -20,7 +20,15 @@ local function animate_paste(opts, mode)
 	local paste_mode = get_paste_mode()
 	local text = split_lines(vim.fn.getreg('"', true))
 
-	vim.fn.feedkeys(mode, "n")
+	local cmd = mode
+
+	if mode == "p" and opts.paste_mapping ~= nil then
+		cmd = cmd .. opts.paste_mapping
+	elseif mode == "P" and opts.Paste_mapping ~= nil then
+		cmd = cmd .. opts.Paste_mapping
+	end
+
+	vim.fn.feedkeys(cmd, "n")
 	restore_paste_mode(paste_mode)
 
 	vim.schedule(function()

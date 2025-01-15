@@ -228,7 +228,7 @@ end
 M.search_next = function()
 	if not M.config.overwrite.search.enabled then
 		vim.notify(
-			"TinyGlimmer: Search is not enabled in your configuration.\nYou should not use search_next.",
+			'TinyGlimmer: Search is not enabled in your configuration.\nYou should not use require("tiny-glimmer").search_next().',
 			vim.log.levels.WARN
 		)
 	end
@@ -239,7 +239,7 @@ end
 M.search_prev = function()
 	if not M.config.overwrite.search.enabled then
 		vim.notify(
-			"TinyGlimmer: Search is not enabled in your configuration.\nYou should not use search_prev.",
+			'TinyGlimmer: Search is not enabled in your configuration.\nYou should not use require("tiny-glimmer").search_prev().',
 			vim.log.levels.WARN
 		)
 	end
@@ -249,7 +249,7 @@ end
 M.paste = function()
 	if not M.config.overwrite.paste.enabled then
 		vim.notify(
-			"TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use paste.",
+			'TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use require("tiny-glimmer").paste().',
 			vim.log.levels.WARN
 		)
 	end
@@ -259,7 +259,7 @@ end
 M.Paste = function()
 	if not M.config.overwrite.paste.enabled then
 		vim.notify(
-			"TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use Paste.",
+			'TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use require("tiny-glimmer").Paste.',
 			vim.log.levels.WARN
 		)
 	end

@@ -23,6 +23,9 @@ A tiny Neovim plugin that adds subtle animations to various operations.
 
 
 
+  [!WARNING] This plugin is still in beta. It is possible that some changes will
+  break the plugin.
+
 FEATURES                        *tiny-glimmer.nvim-tiny-glimmer.nvim-features*
 
 - Smooth animations for yank operations

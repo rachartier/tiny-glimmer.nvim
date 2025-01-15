@@ -10,6 +10,10 @@ local function search(opts, direction, animations, animation_refresh)
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
 	local matches = vim.fn.matchbufline(buf, search_pattern, cursor_pos[1], cursor_pos[1])
 
+	if vim.tbl_isempty(matches) then
+		return
+	end
+
 	local keys = direction == "w" and opts.next_mapping or opts.prev_mapping
 	if keys ~= nil and key ~= "" then
 		vim.fn.feedkeys(direction == "w" and opts.next_mapping or opts.prev_mapping)

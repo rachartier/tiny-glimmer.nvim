@@ -278,12 +278,19 @@ Configuration example with overwrites enabled:
             {
                 "p",
                 function()
-                    print("paste")
                     require("tiny-glimmer").paste()
                 end,
                 { noremap = true, silent = true },
             },
+            {
+                "P",
+                function()
+                    require("tiny-glimmer").Paste()
+                end,
+                { noremap = true, silent = true },
+            },
         },
+        opts = {},
     }
 <
 

@@ -22,7 +22,7 @@ M.config = {
 			prev_mapping = "zzzv", -- Can be empty or nil
 		},
 		paste = {
-			enabled = false,
+			enabled = true,
 			default_animation = "reverse_fade",
 		},
 	},
@@ -247,7 +247,7 @@ M.search_prev = function()
 end
 
 M.paste = function()
-	if M.config.overwrite.paste.enabled then
+	if not M.config.overwrite.paste.enabled then
 		vim.notify(
 			"TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use paste.",
 			vim.log.levels.WARN
@@ -257,7 +257,7 @@ M.paste = function()
 end
 
 M.Paste = function()
-	if M.config.overwrite.paste.enabled then
+	if not M.config.overwrite.paste.enabled then
 		vim.notify(
 			"TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use Paste.",
 			vim.log.levels.WARN

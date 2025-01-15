@@ -10,7 +10,17 @@ A tiny Neovim plugin that adds subtle animations to various operations.
 
 ## ✨ Features
 
-![tiny_glimmer_demo](https://github.com/user-attachments/assets/f662b9d3-98f5-4683-97e4-c74fe98e2f0e)
+### Yank & Animations
+https://github.com/user-attachments/assets/1bb98834-25d2-4f01-882f-609bec1cbe5c
+
+
+### Paste Overwrite
+https://github.com/user-attachments/assets/1578d19f-f245-4593-a28f-b7e9593cbc68
+
+### Search Overwrite
+https://github.com/user-attachments/assets/2735d70d-32a6-498d-b588-3382fde61e15
+
+
 
 - Smooth animations for yank operations
 - Multiple animation styles:

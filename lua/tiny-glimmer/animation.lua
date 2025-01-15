@@ -4,7 +4,7 @@
 ---@field selection table Selection coordinates {start_line, start_col, end_line, end_col}
 ---@field start_time number Animation start timestamp
 ---@field active boolean Whether the animation is currently active
----@field yanked_content table[] Array of yanked content lines
+---@field content table[] Array of yanked content lines
 ---@field yank_type string Type of yank operation
 ---@field operation string Operator used for the operation
 ---@field visual_highlight table Visual mode highlight settings
@@ -44,10 +44,10 @@ local animation_pool_id = 0
 ---@param animation_type string Type of animation to apply
 ---@param animation_settings table Configuration for the animation
 ---@param selection table Selection coordinates
----@param yanked_content string[] Array of yanked content lines
+---@param content string[] Array of yanked content lines
 ---@return AnimationEffect|nil effect The created animation effect
 ---@return string? error Error message if creation failed
-function AnimationEffect.new(animation_type, animation_settings, selection, yanked_content)
+function AnimationEffect.new(animation_type, animation_settings, selection, content)
 	-- Validate inputs
 	local is_valid, error_msg = validate_settings(animation_type, animation_settings)
 	if not is_valid then
@@ -62,7 +62,11 @@ function AnimationEffect.new(animation_type, animation_settings, selection, yank
 	self.start_time = vim.loop.now()
 	self.active = true
 
-	self.yanked_content = yanked_content
+	if type(content) == "string" then
+		content = { content }
+	end
+
+	self.content = content
 	self.yank_type = vim.v.event.regtype or "v"
 	self.operation = vim.v.event.operator or "y"
 
@@ -122,7 +126,7 @@ end
 local function prepare_lines_to_animate(self, animation_progress)
 	local lines = {}
 
-	for i, line_content in ipairs(self.yanked_content) do
+	for i, line_content in ipairs(self.content) do
 		local end_position = calculate_end_position(self, line_content, i, animation_progress)
 		table.insert(lines, {
 			line_number = i - 1,
@@ -171,7 +175,7 @@ function AnimationEffect:update(refresh_interval_ms)
 
 	local current_time = vim.loop.now()
 	local elapsed_time = current_time - self.start_time
-	local duration = calculate_duration(self.yanked_content, self.settings)
+	local duration = calculate_duration(self.content, self.settings)
 	local progress = math.min(elapsed_time / duration, 1)
 	local effect
 

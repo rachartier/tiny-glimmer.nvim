@@ -54,6 +54,17 @@ require('tiny-glimmer').setup({
     default_animation = "fade",
     refresh_interval_ms = 6,
 
+    search = {
+        --- Enable animation when searching with `n` and `N`.
+        --- WARN: Will disable `hlsearch` even if enabled in your configuration.
+        enabled = false,
+        default_animation = "pulse",
+
+        next_mapping = "zzzv",
+        prev_mapping = "zzzv",
+    },
+
+
     -- Only use if you have a transparent background
     -- It will override the highlight group background color for `to_color` in all animations
     transparency_color = nil,

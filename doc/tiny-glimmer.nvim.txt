@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 14
+*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 15
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -78,6 +78,7 @@ Here’s the default configuration:
         -- Only use if you have a transparent background
         -- It will override the highlight group background color for `to_color` in all animations
         transparency_color = nil,
+        animations = {
             fade = {
                 max_duration = 300,
                 min_duration = 200,

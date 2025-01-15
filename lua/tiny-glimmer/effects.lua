@@ -1,21 +1,36 @@
 local utils = require("tiny-glimmer.utils")
+local easing_functions = require("tiny-glimmer.easing")
 
 return {
-	fade = function(self, progress)
+	fade = function(self, progress, ease)
 		local initial = utils.hex_to_rgb(self.settings.from_color)
 		local final = utils.hex_to_rgb(self.settings.to_color)
+		local current = {}
 
-		local ease = progress < 0.5 and 2 * progress * progress or -1 + (4 - 2 * progress) * progress
+		local fn = easing_functions[ease]
 
-		local current = {
-			r = initial.r + (final.r - initial.r) * ease,
-			g = initial.g + (final.g - initial.g) * ease,
-			b = initial.b + (final.b - initial.b) * ease,
+		current = {
+			r = fn(progress, initial.r, final.r - initial.r, 1),
+			g = fn(progress, initial.g, final.g - initial.g, 1),
+			b = fn(progress, initial.b, final.b - initial.b, 1),
 		}
 
 		return utils.rgb_to_hex(current), 1
 	end,
+	reverse_fade = function(self, progress, ease)
+		local initial = utils.hex_to_rgb(self.settings.from_color)
+		local final = utils.hex_to_rgb(self.settings.to_color)
 
+		local fn = easing_functions[ease]
+
+		local current = {
+			r = fn(progress, final.r, initial.r - final.r, 1),
+			g = fn(progress, final.g, initial.g - final.g, 1),
+			b = fn(progress, final.b, initial.b - final.b, 1),
+		}
+
+		return utils.rgb_to_hex(current), 1
+	end,
 	bounce = function(self, progress)
 		local oscillation = math.abs(math.sin(progress * math.pi * self.settings.oscillation_count))
 

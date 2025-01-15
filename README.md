@@ -12,6 +12,7 @@ A tiny Neovim plugin that adds subtle animations to yank operations.
 - Smooth animations for yank operations
 - Multiple animation styles:
   - `fade`: Simple fade in/out effect
+  - `reverse_fade`: Reverse fade in/out effect
   - `bounce`: Bouncing transition
   - `left_to_right`: Linear left-to-right animation
   - `pulse`: Pulsating highlight effect
@@ -28,7 +29,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
 {
     "rachartier/tiny-glimmer.nvim",
-    event = "TextYankPost",
+    event = "VeryLazy",
     opts = {
         -- your configuration
     },
@@ -54,14 +55,19 @@ require('tiny-glimmer').setup({
     default_animation = "fade",
     refresh_interval_ms = 6,
 
-    search = {
-        --- Enable animation when searching with `n` and `N`.
-        --- WARN: Will disable `hlsearch` even if enabled in your configuration.
-        enabled = false,
-        default_animation = "pulse",
+    overwrite = {
+        search = {
+            enabled = false,
+            default_animation = "pulse",
 
-        next_mapping = "zzzv",
-        prev_mapping = "zzzv",
+            --- Keys to navigate to the next match after `n` or `N`
+            next_mapping = "zzzv", -- Can be empty or nil
+            prev_mapping = "zzzv", -- Can be empty or nil
+        },
+        paste = {
+            enabled = false,
+            default_animation = "reverse_fade",
+        },
     },
 
 
@@ -70,8 +76,15 @@ require('tiny-glimmer').setup({
     transparency_color = nil,
     animations = {
         fade = {
-            max_duration = 300,
-            min_duration = 200,
+            max_duration = 400,
+            min_duration = 300,
+            easing = "outQuad",
+            chars_for_max_duration = 10,
+        },
+        reverse_fade = {
+            max_duration = 380,
+            min_duration = 300,
+            easing = "outBack",
             chars_for_max_duration = 10,
         },
         bounce = {
@@ -82,7 +95,7 @@ require('tiny-glimmer').setup({
         },
         left_to_right = {
             max_duration = 350,
-            min_duration = 150,
+            min_duration = 350,
             chars_for_max_duration = 25,
             lingering_time = 50,
         },
@@ -93,11 +106,7 @@ require('tiny-glimmer').setup({
             pulse_count = 2,
             intensity = 1.2,
         },
-        rainbow = {
-            max_duration = 600,
-            min_duration = 350,
-            chars_for_max_duration = 20,
-        },
+
         custom = {
             max_duration = 350,
             chars_for_max_duration = 40,
@@ -141,6 +150,51 @@ require('tiny-glimmer').setup({
 > [!WARNING]
 Only `rainbow` animation does not uses `from_color` and `to_color` options.
 
+### Ease Functions
+
+You can use the following easing functions in `fade` and `reverse_fade`:
+- linear
+- inQuad
+- outQuad
+- inOutQuad
+- outInQuad
+- inCubic
+- outCubic
+- inOutCubic
+- outInCubic
+- inQuart
+- outQuart
+- inOutQuart
+- outInQuart
+- inQuint
+- outQuint
+- inOutQuint
+- outInQuint
+- inSine
+- outSine
+- inOutSine
+- outInSine
+- inExpo
+- outExpo
+- inOutExpo
+- outInExpo
+- inCirc
+- outCirc
+- inOutCirc
+- outInCirc
+- inElastic
+- outElastic
+- inOutElastic
+- outInElastic
+- inBack
+- outBack
+- inOutBack
+- outInBack
+- inBounce
+- outBounce
+- inOutBounce
+- outInBounce
+
 ### Animation Settings
 
 Each animation type has its own configuration options:
@@ -157,6 +211,7 @@ Each animation type has its own configuration options:
 - `:TinyGlimmer enable` - Enable animations
 - `:TinyGlimmer disable` - Disable animations
 - `:TinyGlimmer fade` - Switch to fade animation
+- `:TinyGlimmer reverse_fade` - Switch to reverse fade animation
 - `:TinyGlimmer bounce` - Switch to bounce animation
 - `:TinyGlimmer left_to_right` - Switch to left-to-right animation
 - `:TinyGlimmer pulse` - Switch to pulse animation
@@ -174,13 +229,56 @@ require('tiny-glimmer').disable()
 
 -- Toggle animations
 require('tiny-glimmer').toggle()
+
+-- When overwrite.search.enabled is true
+require('tiny-glimmer').search_next() -- Same as `n`
+require('tiny-glimmer').search_prev() -- Same as `N`
+
+-- When overwrite.paste.enabled is true
+require('tiny-glimmer').paste() -- Same as `p`
+require('tiny-glimmer').Paste() -- Same as `P`
 ```
+Configuration example with overwrites enabled:
 
-
+```lua
+{
+    "rachartier/tiny-glimmer.nvim",
+    event = "VeryLazy",
+    keys = {
+        {
+            "n",
+            function()
+                require("tiny-glimmer").search_next()
+            end,
+            { noremap = true, silent = true },
+        },
+        {
+            "N",
+            function()
+                require("tiny-glimmer").search_prev()
+            end,
+            { noremap = true, silent = true },
+        },
+        {
+            "p",
+            function()
+                print("paste")
+                require("tiny-glimmer").paste()
+            end,
+            { noremap = true, silent = true },
+        },
+    },
+}
+```
 ## ❓FAQ
 
 ### Why is there two animations playing at the same time?
 You should disable your own `TextYankPost` autocmd that calls `vim.highlight.on_yank`
+
+
+## Thanks
+
+- [EmmanuelOga/easing](https://github.com/EmmanuelOga) for the easing functions
 
 ## 📝 License
 

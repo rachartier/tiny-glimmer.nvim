@@ -179,13 +179,21 @@ function AnimationEffect:update(refresh_interval_ms)
 	local progress = math.min(elapsed_time / duration, 1)
 	local effect
 
+	if self.settings.min_progress then
+		if progress < self.settings.min_progress then
+			progress = self.settings.min_progress
+		end
+	end
+
 	if self.type == "custom" then
 		effect = self.settings.effect
 	else
 		effect = animation_effects[self.type]
 	end
 
-	local color, animation_progress = effect(self, progress)
+	local easing = self.settings.easing or nil
+
+	local color, animation_progress = effect(self, progress, easing)
 
 	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = color })
 	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.selection.start_line, self.selection.end_line + 1)

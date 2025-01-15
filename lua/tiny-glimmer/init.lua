@@ -1,10 +1,10 @@
 local M = {}
 
-local search = require("tiny-glimmer.search")
+local overwrite = require("tiny-glimmer.overwrite")
 local utils = require("tiny-glimmer.utils")
 local effects = require("tiny-glimmer.effects")
 
-local AnimationEffect = require("tiny-glimmer.animation")
+local AnimationFactory = require("tiny-glimmer.animation_factory")
 
 local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
 local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
@@ -12,13 +12,19 @@ local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 M.config = {
 	enabled = true,
 
-	search = {
-		enabled = false,
-		default_animation = "pulse",
+	overwrite = {
+		search = {
+			enabled = false,
+			default_animation = "pulse",
 
-		--- Keys to navigate to the next match after `n` or `N`
-		next_mapping = "zzzv", -- Can be empty or nil
-		prev_mapping = "zzzv", -- Can be empty or nil
+			--- Keys to navigate to the next match after `n` or `N`
+			next_mapping = "zzzv", -- Can be empty or nil
+			prev_mapping = "zzzv", -- Can be empty or nil
+		},
+		paste = {
+			enabled = false,
+			default_animation = "reverse_fade",
+		},
 	},
 
 	default_animation = "fade",
@@ -26,8 +32,17 @@ M.config = {
 	transparency_color = nil,
 	animations = {
 		fade = {
-			max_duration = 300,
-			min_duration = 200,
+			max_duration = 400,
+			min_duration = 300,
+			easing = "outQuad",
+			chars_for_max_duration = 10,
+			from_color = hl_visual_bg,
+			to_color = hl_normal_bg,
+		},
+		reverse_fade = {
+			max_duration = 380,
+			min_duration = 300,
+			easing = "outBack",
 			chars_for_max_duration = 10,
 			from_color = hl_visual_bg,
 			to_color = hl_normal_bg,
@@ -140,6 +155,8 @@ function M.setup(options)
 
 	local animation_group = vim.api.nvim_create_augroup("TinyGlimmer", { clear = true })
 
+	AnimationFactory.initialize(M.config, M.config.animations, M.config.refresh_interval_ms)
+
 	vim.api.nvim_create_autocmd("TextYankPost", {
 		group = animation_group,
 		callback = function()
@@ -156,22 +173,11 @@ function M.setup(options)
 
 			local yanked_content = vim.v.event.regcontents
 
-			local animation, error_msg = AnimationEffect.new(
-				M.config.default_animation,
-				M.config.animations[M.config.default_animation],
-				selection,
-				yanked_content
-			)
-
-			if animation ~= nil then
-				animation:update(M.config.refresh_interval_ms)
-			else
-				vim.notify("TinyGlimmer: " .. error_msg, vim.log.levels.ERROR)
-			end
+			AnimationFactory.get_instance():create(M.config.default_animation, selection, yanked_content)
 		end,
 	})
 
-	if M.config.search.enabled then
+	if M.config.overwrite.search.enabled then
 		vim.opt.hlsearch = false
 	end
 end
@@ -186,14 +192,14 @@ vim.api.nvim_create_user_command("TinyGlimmer", function(args)
 		M.config.default_animation = command
 	else
 		vim.notify(
-			"Usage: TinyGlimmer [enable|disable|fade|bounce|left_to_right|pulse|rainbow|custom]",
+			"Usage: TinyGlimmer [enable|disable|fade|reverse_fade|bounce|left_to_right|pulse|rainbow|custom]",
 			vim.log.levels.INFO
 		)
 	end
 end, {
 	nargs = 1,
 	complete = function()
-		return { "enable", "disable", "fade", "bounce", "left_to_right", "pulse", "rainbow", "custom" }
+		return { "enable", "disable", "fade", "reverse_fade", "bounce", "left_to_right", "pulse", "rainbow", "custom" }
 	end,
 })
 
@@ -220,10 +226,45 @@ M.get_background_hl = function(hl_name)
 end
 
 M.search_next = function()
-	search.search_next(M.config.search, M.config.animations, M.config.refresh_interval_ms)
+	if not M.config.overwrite.search.enabled then
+		vim.notify(
+			"TinyGlimmer: Search is not enabled in your configuration.\nYou should not use search_next.",
+			vim.log.levels.WARN
+		)
+	end
+
+	overwrite.search.search_next(M.config.overwrite.search)
 end
+
 M.search_prev = function()
-	search.search_prev(M.config.search, M.config.animations, M.config.refresh_interval_ms)
+	if not M.config.overwrite.search.enabled then
+		vim.notify(
+			"TinyGlimmer: Search is not enabled in your configuration.\nYou should not use search_prev.",
+			vim.log.levels.WARN
+		)
+	end
+	overwrite.search.search_prev(M.config.overwrite.search)
+end
+
+M.paste = function()
+	if M.config.overwrite.paste.enabled then
+		vim.notify(
+			"TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use paste.",
+			vim.log.levels.WARN
+		)
+	end
+	overwrite.paste.paste(M.config.overwrite.paste)
+end
+
+M.Paste = function()
+	if M.config.overwrite.paste.enabled then
+		vim.notify(
+			"TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use Paste.",
+			vim.log.levels.WARN
+		)
+	end
+
+	overwrite.paste.Paste(M.config.overwrite.paste)
 end
 
 return M

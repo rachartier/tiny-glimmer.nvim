@@ -220,10 +220,10 @@ M.get_background_hl = function(hl_name)
 end
 
 M.search_next = function()
-	search.search_next(M.config.search, M.config.animations)
+	search.search_next(M.config.search, M.config.animations, M.config.refresh_interval_ms)
 end
 M.search_prev = function()
-	search.search_prev(M.config.search, M.config.animations)
+	search.search_prev(M.config.search, M.config.animations, M.config.refresh_interval_ms)
 end
 
 return M

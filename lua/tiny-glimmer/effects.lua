@@ -2,9 +2,9 @@ local utils = require("tiny-glimmer.utils")
 local easing_functions = require("tiny-glimmer.easing")
 
 return {
-	fade = function(self, progress, ease)
-		local initial = utils.hex_to_rgb(self.settings.from_color)
-		local final = utils.hex_to_rgb(self.settings.to_color)
+	fade = function(self, from, to, progress, ease)
+		local initial = utils.hex_to_rgb(from)
+		local final = utils.hex_to_rgb(to)
 		local current = {}
 
 		local fn = easing_functions[ease]
@@ -17,9 +17,9 @@ return {
 
 		return utils.rgb_to_hex(current), 1
 	end,
-	reverse_fade = function(self, progress, ease)
-		local initial = utils.hex_to_rgb(self.settings.from_color)
-		local final = utils.hex_to_rgb(self.settings.to_color)
+	reverse_fade = function(self, from, to, progress, ease)
+		local initial = utils.hex_to_rgb(from)
+		local final = utils.hex_to_rgb(to)
 
 		local fn = easing_functions[ease]
 
@@ -31,11 +31,11 @@ return {
 
 		return utils.rgb_to_hex(current), 1
 	end,
-	bounce = function(self, progress)
+	bounce = function(self, from, to, progress)
 		local oscillation = math.abs(math.sin(progress * math.pi * self.settings.oscillation_count))
 
-		local initial = utils.hex_to_rgb(self.settings.from_color)
-		local final = utils.hex_to_rgb(self.settings.to_color)
+		local initial = utils.hex_to_rgb(from)
+		local final = utils.hex_to_rgb(to)
 
 		local current = {
 			r = math.max(initial.r + (final.r - initial.r) * oscillation, 0),
@@ -46,9 +46,9 @@ return {
 		return utils.rgb_to_hex(current), 1
 	end,
 
-	left_to_right = function(self, progress)
-		local initial = utils.hex_to_rgb(self.settings.from_color)
-		local final = utils.hex_to_rgb(self.settings.to_color)
+	left_to_right = function(self, from, to, progress)
+		local initial = utils.hex_to_rgb(from)
+		local final = utils.hex_to_rgb(to)
 
 		local current = {
 			r = initial.r + (final.r - initial.r) * math.min(0.9, progress),
@@ -58,9 +58,9 @@ return {
 
 		return utils.rgb_to_hex(current), progress
 	end,
-	pulse = function(self, progress)
-		local initial = utils.hex_to_rgb(self.settings.from_color)
-		local final = utils.hex_to_rgb(self.settings.to_color)
+	pulse = function(self, from, to, progress)
+		local initial = utils.hex_to_rgb(from)
+		local final = utils.hex_to_rgb(to)
 
 		local pulse = math.abs(math.sin(progress * math.pi * self.settings.pulse_count))
 		pulse = pulse * self.settings.intensity
@@ -74,7 +74,7 @@ return {
 		return utils.rgb_to_hex(current), 1
 	end,
 
-	rainbow = function(self, progress)
+	rainbow = function(self, from, to, progress)
 		local rainbow_colors = {
 			{ r = 255, g = 0, b = 0 },
 			{ r = 255, g = 127, b = 0 },

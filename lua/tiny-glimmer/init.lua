@@ -246,6 +246,27 @@ M.toggle = function()
 	M.config.enabled = not M.config.enabled
 end
 
+M.change_hl = function(animation_name, hl)
+	if not M.config.animations[animation_name] then
+		vim.notify("TinyGlimmer: Animation not found", vim.log.levels.ERROR)
+		return
+	end
+
+	local animation = M.config.animations[animation_name]
+
+	if hl.from_color then
+		animation.from_color = hl.from_color
+	end
+
+	if hl.to_color then
+		animation.to_color = hl.to_color
+	end
+
+	M.config.animations[animation] = animation
+
+	sanitize_highlights(M.config)
+end
+
 --- Get the background highlight color for the given highlight name
 --- @param hl_name string
 --- @return string Hex color

@@ -258,8 +258,12 @@ require('tiny-glimmer').search_prev() -- Same as `N`
 require('tiny-glimmer').paste() -- Same as `p`
 require('tiny-glimmer').Paste() -- Same as `P`
 ```
-Configuration example with overwrites enabled:
 
+### Keymaps
+> [!INFO]
+> If you have `overwrite.auto_map` set to `true`, you don't need to set these keymaps.
+
+Configuration example with overwrites enabled:
 ```lua
 {
     "rachartier/tiny-glimmer.nvim",

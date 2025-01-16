@@ -13,6 +13,7 @@ M.config = {
 	enabled = true,
 
 	overwrite = {
+		auto_map = true,
 		search = {
 			enabled = false,
 			default_animation = "pulse",
@@ -180,7 +181,30 @@ function M.setup(options)
 		end,
 	})
 
+	if M.config.overwrite.auto_map then
+        -- stylua: ignore
+        if M.config.overwrite.search.enabled then
+            vim.keymap.set("n", "n", "<cmd>lua require('tiny-glimmer').search_next()<CR>", { noremap = true, silent = true })
+            vim.keymap.set("n", "N", "<cmd>lua require('tiny-glimmer').search_prev()<CR>", { noremap = true, silent = true })
+        end
+
+		if M.config.overwrite.paste.enabled then
+			vim.keymap.set("n", "p", "<cmd>lua require('tiny-glimmer').paste()<CR>", { noremap = true, silent = true })
+			vim.keymap.set("n", "P", "<cmd>lua require('tiny-glimmer').Paste()<CR>", { noremap = true, silent = true })
+		end
+		-- stylua: enable
+	end
+
 	if M.config.overwrite.search.enabled then
+		vim.api.nvim_create_autocmd("CmdlineLeave", {
+			group = animation_group,
+			callback = function()
+				local cmd_type = vim.fn.getcmdtype()
+				if cmd_type == "/" or cmd_type == "?" then
+					overwrite.search.search_on_line(M.config.overwrite.search)
+				end
+			end,
+		})
 		vim.opt.hlsearch = false
 	end
 end

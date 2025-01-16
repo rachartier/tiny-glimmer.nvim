@@ -69,6 +69,10 @@ require('tiny-glimmer').setup({
     refresh_interval_ms = 6,
 
     overwrite = {
+        -- Automatically map keys to overwrite operations
+        -- If set to false, you will need to call the API functions to trigger the animations
+        auto_map = true,
+
         search = {
             enabled = false,
             default_animation = "pulse",

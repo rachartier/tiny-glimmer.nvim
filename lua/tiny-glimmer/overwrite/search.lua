@@ -1,7 +1,6 @@
 local M = {}
 
-local function search(opts, direction)
-	local search_pattern = vim.fn.getreg("/")
+local function search(opts, direction, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
 	vim.fn.search(search_pattern, direction)
 
@@ -28,15 +27,20 @@ local function search(opts, direction)
 end
 
 function M.search_on_line(opts)
-	search(opts, "n")
+	search(opts, "n", vim.fn.getreg("/"))
 end
 
 function M.search_next(opts)
-	search(opts, "w")
+	search(opts, "w", vim.fn.getreg("/"))
 end
 
 function M.search_prev(opts)
-	search(opts, "bw")
+	search(opts, "bw", vim.fn.getreg("/"))
+end
+
+function M.search_under_cursor(opts)
+	local word_under_cursor = vim.fn.expand("<cword>")
+	search(opts, "w", word_under_cursor)
 end
 
 return M

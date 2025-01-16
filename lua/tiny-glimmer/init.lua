@@ -186,6 +186,7 @@ function M.setup(options)
         if M.config.overwrite.search.enabled then
             vim.keymap.set("n", "n", "<cmd>lua require('tiny-glimmer').search_next()<CR>", { noremap = true, silent = true })
             vim.keymap.set("n", "N", "<cmd>lua require('tiny-glimmer').search_prev()<CR>", { noremap = true, silent = true })
+            vim.keymap.set("n", "*", "<cmd>lua require('tiny-glimmer').search_under_cursor()<CR>", { noremap = true, silent = true })
         end
 
 		if M.config.overwrite.paste.enabled then
@@ -292,6 +293,16 @@ M.Paste = function()
 	end
 
 	overwrite.paste.Paste(M.config.overwrite.paste)
+end
+
+M.search_under_cursor = function()
+	if not M.config.overwrite.search.enabled then
+		vim.notify(
+			'TinyGlimmer: Search is not enabled in your configuration.\nYou should not use require("tiny-glimmer").search_under_cursor().',
+			vim.log.levels.WARN
+		)
+	end
+	overwrite.search.search_under_cursor(M.config.overwrite.search)
 end
 
 return M

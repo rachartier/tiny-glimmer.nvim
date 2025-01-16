@@ -303,6 +303,13 @@ Configuration example with overwrites enabled:
                 end,
                 { noremap = true, silent = true },
             },
+            {
+                "*",
+                function()
+                    require("tiny-glimmer").search_under_cursor()
+                end,
+                { noremap = true, silent = true },
+            }
         },
         opts = {},
     }

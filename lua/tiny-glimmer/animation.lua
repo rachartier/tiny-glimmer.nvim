@@ -9,6 +9,8 @@
 ---@field operation string Operator used for the operation
 ---@field visual_highlight table Visual mode highlight settings
 ---@field id number Animation effect identifier
+---@field cursor_line_enabled boolean Whether the cursor line is enabled
+---@field cursor_line_color string Cursor line color
 ---@field virt_text_settings table Virtual text configuration
 local AnimationEffect = {}
 AnimationEffect.__index = AnimationEffect
@@ -74,6 +76,16 @@ function AnimationEffect.new(animation_type, animation_settings, selection, cont
 
 	self.id = animation_pool_id
 	animation_pool_id = animation_pool_id + 1
+
+	local cursor_line_hl = utils.get_highlight("CursorLine").bg
+
+	self.cursor_line_enabled = false
+	self.cursor_line_color = nil
+
+	if cursor_line_hl ~= nil and cursor_line_hl ~= "None" then
+		self.cursor_line_enabled = true
+		self.cursor_line_color = utils.int_to_hex(cursor_line_hl)
+	end
 
 	return self
 end
@@ -150,6 +162,15 @@ local function apply_line_animation(self, line, animation_progress)
 		animated_end = 1
 	end
 
+	local hl_group = "TinyGlimmerAnimationHighlight_" .. self.id
+	if self.cursor_line_enabled then
+		local cursor_position = vim.api.nvim_win_get_cursor(0)
+
+		if cursor_position[1] - 1 == line.line_number + self.selection.start_line then
+			hl_group = "TinyGlimmerAnimationCursorLineHighlight_" .. self.id
+		end
+	end
+
 	vim.api.nvim_buf_set_extmark(
 		0,
 		tiny_glimmer_ns,
@@ -157,7 +178,7 @@ local function apply_line_animation(self, line, animation_progress)
 		line.start_position,
 		{
 			end_col = animated_end,
-			hl_group = "TinyGlimmerAnimationHighlight_" .. self.id,
+			hl_group = hl_group,
 			hl_mode = "blend",
 			priority = self.virt_text_settings.priority,
 			strict = false,
@@ -192,7 +213,12 @@ function AnimationEffect:update(refresh_interval_ms)
 
 	local easing = self.settings.easing or nil
 
-	local color, animation_progress = effect(self, progress, easing)
+	local color, animation_progress = effect(self, self.settings.from_color, self.settings.to_color, progress, easing)
+
+	if self.cursor_line_enabled then
+		local color_cursor_line, _ = effect(self, self.settings.from_color, self.cursor_line_color, progress, easing)
+		vim.api.nvim_set_hl(0, "TinyGlimmerAnimationCursorLineHighlight_" .. self.id, { bg = color_cursor_line })
+	end
 
 	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = color })
 	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.selection.start_line, self.selection.end_line + 1)

@@ -2,7 +2,10 @@ local M = {}
 
 local function search(opts, direction, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
-	vim.fn.search(search_pattern, direction)
+
+	for occurence = 1, vim.v.count1, 1 do
+		vim.fn.search(search_pattern, direction)
+	end
 
 	local cursor_pos = vim.api.nvim_win_get_cursor(0)
 	local matches = vim.fn.matchbufline(buf, search_pattern, cursor_pos[1], cursor_pos[1])

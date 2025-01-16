@@ -10,11 +10,10 @@ A tiny Neovim plugin that adds subtle animations to various operations.
 
 ## ✨ Features
 
-### Yank & Animations
+### Some animations
 https://github.com/user-attachments/assets/1bb98834-25d2-4f01-882f-609bec1cbe5c
 
-
-### Paste Overwrite
+### Yank & Paste Overwrite 
 https://github.com/user-attachments/assets/1578d19f-f245-4593-a28f-b7e9593cbc68
 
 ### Search Overwrite

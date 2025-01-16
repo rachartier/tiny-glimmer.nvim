@@ -22,7 +22,7 @@ M.config = {
 			prev_mapping = "Nzzzv",
 		},
 		paste = {
-			enabled = false,
+			enabled = true,
 			default_animation = "reverse_fade",
 
 			paste_mapping = "p=`]",

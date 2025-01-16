@@ -205,7 +205,7 @@ function AnimationEffect:update(refresh_interval_ms)
 	if progress >= 1 then
 		self.active = false
 		vim.defer_fn(function()
-			vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.selection.start_line, self.selection.end_line + 1)
+			vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, 0, -1)
 		end, self.settings.lingering_time or 0)
 
 		animation_pool_id = animation_pool_id - 1

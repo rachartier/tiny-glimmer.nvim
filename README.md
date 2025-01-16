@@ -252,9 +252,9 @@ require('tiny-glimmer').toggle()
 
 --- Change highlight
 --- @param animation_name string|string[] The animation name. Can be a string or a table of strings.
---- 									  If a table is passed, each animation will have their highlight changed.
---- 									  If a string is passed, only the provided animation have their highlight changed.
---- 									  You can pass 'all' to change all animations.
+---    If a table is passed, each animation will have their highlight changed.
+---    If a string is passed, only the provided animation have their highlight changed.
+---    You can pass 'all' to change all animations.
 --- @param hl table The highlight configuration
 -- Examples:
 -- require('tiny-glimmer').change_hl('fade', { from_color = '#FF0000', to_color = '#0000FF' })

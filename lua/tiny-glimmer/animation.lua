@@ -15,7 +15,6 @@ AnimationEffect.__index = AnimationEffect
 
 local tiny_glimmer_ns = vim.api.nvim_create_namespace("tiny-glimmer")
 
--- Required dependencies
 local utils = require("tiny-glimmer.utils")
 local animation_effects = require("tiny-glimmer.effects")
 

@@ -27,6 +27,10 @@ local function search(opts, direction)
 	require("tiny-glimmer.animation_factory").get_instance():create(opts.default_animation, selection, matches[1].text)
 end
 
+function M.search_on_line(opts)
+	search(opts, "n")
+end
+
 function M.search_next(opts)
 	search(opts, "w")
 end

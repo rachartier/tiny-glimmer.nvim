@@ -23,7 +23,7 @@ M.config = {
 			prev_mapping = "zzzv", -- Can be empty or nil
 		},
 		paste = {
-			enabled = true,
+			enabled = false,
 			default_animation = "reverse_fade",
 
 			paste_mapping = "=`]", -- Can be empty or nil

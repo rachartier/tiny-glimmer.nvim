@@ -3,30 +3,45 @@ local M = {}
 local function search(opts, direction, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
 
-	for occurence = 1, vim.v.count1, 1 do
-		vim.fn.search(search_pattern, direction)
+	local keys
+
+	if direction == "w" then
+		if type(opts.next_mapping) == "function" then
+			keys = opts.next_mapping()
+		else
+			keys = opts.next_mapping
+		end
+	else
+		if type(opts.prev_mapping) == "function" then
+			keys = opts.prev_mapping()
+		else
+			keys = opts.prev_mapping
+		end
 	end
 
-	local cursor_pos = vim.api.nvim_win_get_cursor(0)
-	local matches = vim.fn.matchbufline(buf, search_pattern, cursor_pos[1], cursor_pos[1])
-
-	if vim.tbl_isempty(matches) then
-		return
-	end
-
-	local keys = direction == "w" and opts.next_mapping or opts.prev_mapping
 	if keys ~= nil and keys ~= "" then
-		vim.fn.feedkeys(direction == "w" and opts.next_mapping or opts.prev_mapping)
+		vim.fn.feedkeys(keys, "n")
 	end
 
-	local selection = {
-		start_line = cursor_pos[1] - 1,
-		start_col = cursor_pos[2],
-		end_line = cursor_pos[1] - 1,
-		end_col = cursor_pos[2] + #matches[1].text,
-	}
+	vim.schedule(function()
+		local cursor_pos = vim.api.nvim_win_get_cursor(0)
+		local matches = vim.fn.matchbufline(buf, search_pattern, cursor_pos[1], cursor_pos[1])
 
-	require("tiny-glimmer.animation_factory").get_instance():create(opts.default_animation, selection, matches[1].text)
+		if vim.tbl_isempty(matches) then
+			return
+		end
+
+		local selection = {
+			start_line = cursor_pos[1] - 1,
+			start_col = cursor_pos[2],
+			end_line = cursor_pos[1] - 1,
+			end_col = cursor_pos[2] + #matches[1].text,
+		}
+
+		require("tiny-glimmer.animation_factory")
+			.get_instance()
+			:create(opts.default_animation, selection, matches[1].text)
+	end)
 end
 
 function M.search_on_line(opts)

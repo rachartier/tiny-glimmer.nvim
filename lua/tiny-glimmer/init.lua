@@ -18,16 +18,15 @@ M.config = {
 			enabled = false,
 			default_animation = "pulse",
 
-			--- Keys to navigate to the next match after `n` or `N`
-			next_mapping = "zzzv", -- Can be empty or nil
-			prev_mapping = "zzzv", -- Can be empty or nil
+			next_mapping = "nzzzv",
+			prev_mapping = "Nzzzv",
 		},
 		paste = {
 			enabled = false,
 			default_animation = "reverse_fade",
 
-			paste_mapping = "=`]", -- Can be empty or nil
-			Paste_mapping = "=`]", -- Can be empty or nil
+			paste_mapping = "p=`]",
+			Paste_mapping = "P=`]",
 		},
 	},
 
@@ -184,9 +183,12 @@ function M.setup(options)
 	if M.config.overwrite.auto_map then
         -- stylua: ignore
         if M.config.overwrite.search.enabled then
-            vim.keymap.set("n", "n", "<cmd>lua require('tiny-glimmer').search_next()<CR>", { noremap = true, silent = true })
-            vim.keymap.set("n", "N", "<cmd>lua require('tiny-glimmer').search_prev()<CR>", { noremap = true, silent = true })
-            vim.keymap.set("n", "*", "<cmd>lua require('tiny-glimmer').search_under_cursor()<CR>", { noremap = true, silent = true })
+            vim.keymap.set("n", "n", "<cmd>lua require('tiny-glimmer').search_next()<CR>",
+                { noremap = true, silent = true })
+            vim.keymap.set("n", "N", "<cmd>lua require('tiny-glimmer').search_prev()<CR>",
+                { noremap = true, silent = true })
+            vim.keymap.set("n", "*", "<cmd>lua require('tiny-glimmer').search_under_cursor()<CR>",
+                { noremap = true, silent = true })
         end
 
 		if M.config.overwrite.paste.enabled then

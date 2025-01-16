@@ -23,10 +23,18 @@ local function animate_paste(opts, mode)
 
 	local cmd = mode
 
-	if mode == "p" and opts.paste_mapping ~= nil then
-		cmd = cmd .. opts.paste_mapping
-	elseif mode == "P" and opts.Paste_mapping ~= nil then
-		cmd = cmd .. opts.Paste_mapping
+	if mode == "p" then
+		if type(opts.paste_mapping) == "function" then
+			cmd = opts.paste_mapping()
+		else
+			cmd = opts.paste_mapping
+		end
+	elseif mode == "P" then
+		if type(opts.Paste_mapping) == "function" then
+			cmd = opts.Paste_mapping()
+		else
+			cmd = opts.Paste_mapping
+		end
 	end
 
 	vim.fn.feedkeys(cmd, "n")

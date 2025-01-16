@@ -11,6 +11,7 @@
 ---@field id number Animation effect identifier
 ---@field cursor_line_enabled boolean Whether the cursor line is enabled
 ---@field cursor_line_color string Cursor line color
+---@field effect function Animation effect function
 ---@field virt_text_settings table Virtual text configuration
 local AnimationEffect = {}
 AnimationEffect.__index = AnimationEffect
@@ -85,6 +86,12 @@ function AnimationEffect.new(animation_type, animation_settings, selection, cont
 	if cursor_line_hl ~= nil and cursor_line_hl ~= "None" then
 		self.cursor_line_enabled = true
 		self.cursor_line_color = utils.int_to_hex(cursor_line_hl)
+	end
+
+	if self.type == "custom" then
+		self.effect = self.settings.effect
+	else
+		self.effect = animation_effects[self.type]
 	end
 
 	return self
@@ -162,28 +169,58 @@ local function apply_line_animation(self, line, animation_progress)
 		animated_end = 1
 	end
 
+	local line_index = line.line_number + self.selection.start_line
+
 	local hl_group = "TinyGlimmerAnimationHighlight_" .. self.id
 	if self.cursor_line_enabled then
 		local cursor_position = vim.api.nvim_win_get_cursor(0)
 
-		if cursor_position[1] - 1 == line.line_number + self.selection.start_line then
+		if cursor_position[1] - 1 == line_index then
 			hl_group = "TinyGlimmerAnimationCursorLineHighlight_" .. self.id
 		end
 	end
 
-	vim.api.nvim_buf_set_extmark(
-		0,
-		tiny_glimmer_ns,
-		self.selection.start_line + line.line_number,
-		line.start_position,
-		{
-			end_col = animated_end,
-			hl_group = hl_group,
-			hl_mode = "blend",
-			priority = self.virt_text_settings.priority,
-			strict = false,
-		}
-	)
+	vim.api.nvim_buf_set_extmark(0, tiny_glimmer_ns, line_index, line.start_position, {
+		end_col = animated_end,
+		hl_group = hl_group,
+		hl_mode = "blend",
+		priority = self.virt_text_settings.priority,
+		strict = false,
+	})
+end
+
+function AnimationEffect:cleanup()
+	self.active = false
+	vim.defer_fn(function()
+		vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, 0, -1)
+	end, self.settings.lingering_time or 0)
+
+	animation_pool_id = animation_pool_id - 1
+	if animation_pool_id < 0 then
+		animation_pool_id = 0
+	end
+end
+
+function AnimationEffect:update_effect(progress)
+	local easing = self.settings.easing or nil
+
+	local updated_color, updated_animation_progress =
+		self.effect(self, self.settings.from_color, self.settings.to_color, progress, easing)
+
+	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = updated_color })
+
+	if self.cursor_line_enabled then
+		local updated_color_cursor_line, _ =
+			self.effect(self, self.settings.from_color, self.cursor_line_color, progress, easing)
+
+		vim.api.nvim_set_hl(
+			0,
+			"TinyGlimmerAnimationCursorLineHighlight_" .. self.id,
+			{ bg = updated_color_cursor_line }
+		)
+	end
+
+	return updated_animation_progress
 end
 
 ---Update the animation state
@@ -197,7 +234,6 @@ function AnimationEffect:update(refresh_interval_ms)
 	local elapsed_time = current_time - self.start_time
 	local duration = calculate_duration(self.content, self.settings)
 	local progress = math.min(elapsed_time / duration, 1)
-	local effect
 
 	if self.settings.min_progress then
 		if progress < self.settings.min_progress then
@@ -205,39 +241,17 @@ function AnimationEffect:update(refresh_interval_ms)
 		end
 	end
 
-	if self.type == "custom" then
-		effect = self.settings.effect
-	else
-		effect = animation_effects[self.type]
-	end
+	local updated_animation_progress = self:update_effect(progress)
 
-	local easing = self.settings.easing or nil
-
-	local color, animation_progress = effect(self, self.settings.from_color, self.settings.to_color, progress, easing)
-
-	if self.cursor_line_enabled then
-		local color_cursor_line, _ = effect(self, self.settings.from_color, self.cursor_line_color, progress, easing)
-		vim.api.nvim_set_hl(0, "TinyGlimmerAnimationCursorLineHighlight_" .. self.id, { bg = color_cursor_line })
-	end
-
-	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = color })
 	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.selection.start_line, self.selection.end_line + 1)
 
-	local lines_to_animate = prepare_lines_to_animate(self, animation_progress)
+	local lines_to_animate = prepare_lines_to_animate(self, updated_animation_progress)
 	for _, line in ipairs(lines_to_animate) do
-		apply_line_animation(self, line, animation_progress)
+		apply_line_animation(self, line, updated_animation_progress)
 	end
 
 	if progress >= 1 then
-		self.active = false
-		vim.defer_fn(function()
-			vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, 0, -1)
-		end, self.settings.lingering_time or 0)
-
-		animation_pool_id = animation_pool_id - 1
-		if animation_pool_id < 0 then
-			animation_pool_id = 0
-		end
+		self:cleanup()
 		return true
 	else
 		vim.defer_fn(function()

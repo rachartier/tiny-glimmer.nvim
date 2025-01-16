@@ -253,6 +253,7 @@ require('tiny-glimmer').toggle()
 -- When overwrite.search.enabled is true
 require('tiny-glimmer').search_next() -- Same as `n`
 require('tiny-glimmer').search_prev() -- Same as `N`
+require('tiny-glimmer').search_under_cursor() -- Same as `*`
 
 -- When overwrite.paste.enabled is true
 require('tiny-glimmer').paste() -- Same as `p`

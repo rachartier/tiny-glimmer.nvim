@@ -44,7 +44,7 @@ https://github.com/user-attachments/assets/1578d19f-f245-4593-a28f-b7e9593cbc68
 SEARCH OVERWRITE ~
 
 
-https://github.com/user-attachments/assets/2735d70d-32a6-498d-b588-3382fde61e15
+https://github.com/user-attachments/assets/6bc98a8f-8b7e-4b57-958a-74ad5372612f
 
 - Smooth animations for yank operations
 - Multiple animation styles:

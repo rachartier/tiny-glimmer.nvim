@@ -247,20 +247,44 @@ M.toggle = function()
 end
 
 M.change_hl = function(animation_name, hl)
+	local function change_animation_hl(animation, hl)
+		if hl.from_color then
+			animation.from_color = hl.from_color
+		end
+
+		if hl.to_color then
+			animation.to_color = hl.to_color
+		end
+	end
+
+	if animation_name == "all" then
+		for _, animation in pairs(M.config.animations) do
+			change_animation_hl(animation, hl)
+		end
+		sanitize_highlights(M.config)
+		return
+	end
+
+	if type(animation_name) == "table" then
+		for _, name in ipairs(animation_name) do
+			if not M.config.animations[name] then
+				vim.notify("TinyGlimmer: Animation " .. name .. " not found. Skipping", vim.log.levels.WARN)
+			end
+
+			M.change_hl(name, hl)
+		end
+		sanitize_highlights(M.config)
+		return
+	end
+
 	if not M.config.animations[animation_name] then
-		vim.notify("TinyGlimmer: Animation not found", vim.log.levels.ERROR)
+		vim.notify("TinyGlimmer: Animation " .. animation_name .. " not found", vim.log.levels.ERROR)
 		return
 	end
 
 	local animation = M.config.animations[animation_name]
 
-	if hl.from_color then
-		animation.from_color = hl.from_color
-	end
-
-	if hl.to_color then
-		animation.to_color = hl.to_color
-	end
+	change_animation_hl(animation, hl)
 
 	M.config.animations[animation] = animation
 

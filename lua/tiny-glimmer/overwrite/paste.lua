@@ -11,6 +11,7 @@ end
 local function split_lines(text)
 	local lines = {}
 	for line in text:gmatch("[^\r\n]+") do
+		line = line:gsub("\t", string.rep(" ", vim.bo.tabstop))
 		table.insert(lines, line)
 	end
 	return lines
@@ -32,11 +33,14 @@ local function animate_paste(opts, mode)
 	restore_paste_mode(paste_mode)
 
 	vim.schedule(function()
+		local start_row, start_col = unpack(vim.api.nvim_buf_get_mark(0, "["))
+		local end_row, end_col = unpack(vim.api.nvim_buf_get_mark(0, "]"))
+
 		local selection = {
-			start_line = vim.fn.line("'[") - 1,
-			start_col = vim.fn.col("'[") - 1,
-			end_line = vim.fn.line("']") - 1,
-			end_col = vim.fn.col("']"),
+			start_line = start_row,
+			start_col = start_col,
+			end_line = end_row,
+			end_col = end_col,
 		}
 
 		require("tiny-glimmer.animation_factory").get_instance():create(opts.default_animation, selection, text)

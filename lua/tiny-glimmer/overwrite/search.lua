@@ -1,25 +1,9 @@
 local M = {}
 
-local function search(opts, direction, search_pattern)
+local function search(opts, keys, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
 
-	local keys
-
-	if direction == "w" then
-		if type(opts.next_mapping) == "function" then
-			keys = opts.next_mapping()
-		else
-			keys = opts.next_mapping
-		end
-	else
-		if type(opts.prev_mapping) == "function" then
-			keys = opts.prev_mapping()
-		else
-			keys = opts.prev_mapping
-		end
-	end
-
-	if keys ~= nil and keys ~= "" then
+	if keys ~= nil then
 		vim.fn.feedkeys(keys, "n")
 	end
 
@@ -45,20 +29,36 @@ local function search(opts, direction, search_pattern)
 end
 
 function M.search_on_line(opts)
-	search(opts, "n", vim.fn.getreg("/"))
+	search(opts, nil, vim.fn.getreg("/"))
 end
 
 function M.search_next(opts)
-	search(opts, "w", vim.fn.getreg("/"))
+	local keys
+
+	if type(opts.next_mapping) == "function" then
+		keys = opts.next_mapping()
+	else
+		keys = opts.next_mapping
+	end
+
+	search(opts, keys, vim.fn.getreg("/"))
 end
 
 function M.search_prev(opts)
-	search(opts, "bw", vim.fn.getreg("/"))
+	local keys
+
+	if type(opts.prev_mapping) == "function" then
+		keys = opts.prev_mapping()
+	else
+		keys = opts.prev_mapping
+	end
+
+	search(opts, keys, vim.fn.getreg("/"))
 end
 
 function M.search_under_cursor(opts)
 	local word_under_cursor = vim.fn.expand("<cword>")
-	search(opts, "w", word_under_cursor)
+	search(opts, "*", word_under_cursor)
 end
 
 return M

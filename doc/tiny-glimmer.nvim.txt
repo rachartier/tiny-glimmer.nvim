@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 15
+*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 16
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -99,6 +99,10 @@ Here’s the default configuration:
         refresh_interval_ms = 6,
     
         overwrite = {
+            -- Automatically map keys to overwrite operations
+            -- If set to false, you will need to call the API functions to trigger the animations
+            auto_map = true,
+    
             search = {
                 enabled = false,
                 default_animation = "pulse",

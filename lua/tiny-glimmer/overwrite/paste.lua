@@ -45,9 +45,9 @@ local function animate_paste(opts, mode)
 		local end_row, end_col = unpack(vim.api.nvim_buf_get_mark(0, "]"))
 
 		local selection = {
-			start_line = start_row,
+			start_line = start_row - 1,
 			start_col = start_col,
-			end_line = end_row,
+			end_line = end_row - 1,
 			end_col = end_col,
 		}
 

@@ -261,6 +261,12 @@ API                                  *tiny-glimmer.nvim-tiny-glimmer.nvim-api*
     require('tiny-glimmer').Paste() -- Same as `P`
 <
 
+
+KEYMAPS ~
+
+
+  [!INFO] If you have `overwrite.auto_map` set to `true`, you don’t need to set
+  these keymaps.
 Configuration example with overwrites enabled:
 
 >lua

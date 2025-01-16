@@ -29,13 +29,13 @@ A tiny Neovim plugin that adds subtle animations to various operations.
 FEATURES                        *tiny-glimmer.nvim-tiny-glimmer.nvim-features*
 
 
-YANK & ANIMATIONS ~
+SOME ANIMATIONS ~
 
 
 https://github.com/user-attachments/assets/1bb98834-25d2-4f01-882f-609bec1cbe5c
 
 
-PASTE OVERWRITE ~
+YANK & PASTE OVERWRITE ~
 
 
 https://github.com/user-attachments/assets/1578d19f-f245-4593-a28f-b7e9593cbc68

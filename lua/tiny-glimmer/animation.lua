@@ -162,7 +162,7 @@ function AnimationEffect:update_effect(progress)
 
 	if self.cursor_line_enabled then
 		local updated_color_cursor_line, _ =
-			self.effect(self, self.settings.from_color, self.cursor_line_color, progress, easing)
+			self.effect(self, self.effect.settings.from_color, self.cursor_line_color, progress, easing)
 
 		vim.api.nvim_set_hl(
 			0,

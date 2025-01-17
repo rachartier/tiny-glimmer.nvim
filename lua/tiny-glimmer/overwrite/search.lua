@@ -4,7 +4,7 @@ local function search(opts, keys, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
 
 	if keys ~= nil then
-		vim.fn.feedkeys(keys, "n")
+		vim.fn.feedkeys(vim.v.count1 .. keys, "n")
 	end
 
 	vim.schedule(function()

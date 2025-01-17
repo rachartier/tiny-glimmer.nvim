@@ -156,7 +156,6 @@ Here’s the default configuration:
             left_to_right = {
                 max_duration = 350,
                 min_duration = 350,
-                min_progress = 0.85,
                 chars_for_max_duration = 25,
                 lingering_time = 50,
             },
@@ -168,13 +167,9 @@ Here’s the default configuration:
                 intensity = 1.2,
             },
     
-            -- You can add as many animations as you want
             custom = {
-                -- You can also add as many custom options as you want
-                -- Only `max_duration` and `chars_for_max_duration` is required
                 max_duration = 350,
                 chars_for_max_duration = 40,
-    
                 color = hl_visual_bg,
     
                 -- Custom effect function
@@ -183,7 +178,6 @@ Here’s the default configuration:
                 --
                 -- Should return a color and a progress value
                 -- that represents how much of the animation should be drawn
-                -- self.settings represents the settings of the animation that you defined above
                 effect = function(self, progress)
                     return self.settings.color, progress
                 end,

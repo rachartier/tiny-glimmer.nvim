@@ -49,29 +49,4 @@ function M.rgb_to_hex(rgb_color)
 	return string.format("#%02X%02X%02X", rgb_color.r, rgb_color.g, rgb_color.b)
 end
 
-function M.get_range_last_modification(buf)
-	if buf == nil then
-		buf = 0
-	end
-
-	local start_row, start_col = unpack(vim.api.nvim_buf_get_mark(buf, "["))
-	local end_row, end_col = unpack(vim.api.nvim_buf_get_mark(buf, "]"))
-
-	return {
-		start_line = start_row - 1,
-		start_col = start_col,
-		end_line = end_row - 1,
-		end_col = end_col,
-	}
-end
-
-function M.get_range_yank()
-	return {
-		start_line = vim.fn.line("'[") - 1,
-		start_col = vim.fn.col("'[") - 1,
-		end_line = vim.fn.line("']") - 1,
-		end_col = vim.fn.col("']"),
-	}
-end
-
 return M

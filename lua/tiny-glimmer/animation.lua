@@ -37,11 +37,7 @@ function AnimationEffect.new(effect, opts)
 	self.start_time = vim.loop.now()
 	self.active = true
 
-	if type(opts.content) == "string" then
-		self.content = { opts.content }
-	else
-		self.content = opts.content
-	end
+	self.content = opts.content
 
 	self.yank_type = vim.v.event.regtype or "v"
 	self.operation = vim.v.event.operator or "y"
@@ -87,43 +83,41 @@ end
 ---@param self AnimationEffect Animation instance
 ---@param animation_progress number Current progress (0 to 1)
 ---@return { line_number: number, start_position: number, end_position: number }[] Line configurations
+
 local function compute_lines_range(self, animation_progress)
 	local lines = {}
 	local is_Visual = string.byte(self.yank_type) == 22
 	local is_visual = self.yank_type == "v"
+	local start_position = self.range.start_col
 
 	if self.content ~= nil then
 		for i, line_content in ipairs(self.content) do
-			local end_position = self.range.end_col * animation_progress
+			local end_position = #line_content * animation_progress
 
 			if is_visual then
-				end_position = self.range.start_col + #line_content * animation_progress
+				if i == 1 or i == #self.content then
+					end_position = self.range.end_col * animation_progress
+				end
+			elseif is_Visual then
+				-- FIXME: When there is tabs in the line
+				-- and multiple lines
+				-- the extmakr is not correctly placed, offset is wrong
 			end
 
 			table.insert(lines, {
 				line_number = i - 1,
-				start_position = (i == 1 or is_Visual) and self.range.start_col or 0,
+				start_position = (i == 1 or is_Visual) and start_position or 0,
 				end_position = end_position,
 			})
 		end
 	end
-
 	return lines
 end
 
 ---Renders one line of the animation effect
 ---@param self AnimationEffect Animation instance
 ---@param line { line_number: number, start_position: number, end_position: number } Line configuration
----@param animation_progress number Current progress (0 to 1)
-local function apply_line_animation(self, line, animation_progress)
-	local animated_end = math.ceil(line.end_position * animation_progress)
-
-	if animated_end < line.start_position then
-		animated_end = line.start_position
-	elseif animated_end == 0 then
-		animated_end = 1
-	end
-
+local function apply_hl(self, line)
 	local line_index = line.line_number + self.range.start_line
 
 	local hl_group = "TinyGlimmerAnimationHighlight_" .. self.id
@@ -135,12 +129,11 @@ local function apply_line_animation(self, line, animation_progress)
 		end
 	end
 
-	vim.api.nvim_buf_set_extmark(0, tiny_glimmer_ns, line_index, line.start_position, {
-		end_col = animated_end,
+	utils.set_extmark(line_index, tiny_glimmer_ns, line.start_position, {
+		end_col = line.end_position,
 		hl_group = hl_group,
 		hl_mode = "blend",
 		priority = self.virtual_text_priority,
-		strict = false,
 	})
 end
 
@@ -196,7 +189,7 @@ function AnimationEffect:update(refresh_interval_ms)
 
 	local lines_range = compute_lines_range(self, updated_animation_progress)
 	for _, line_range in ipairs(lines_range) do
-		apply_line_animation(self, line_range, updated_animation_progress)
+		apply_hl(self, line_range)
 	end
 
 	if progress >= 1 then

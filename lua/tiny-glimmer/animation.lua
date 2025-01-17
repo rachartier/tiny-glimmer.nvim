@@ -37,7 +37,11 @@ function AnimationEffect.new(effect, opts)
 	self.start_time = vim.loop.now()
 	self.active = true
 
-	self.content = opts.content
+	if type(opts.content) == "string" then
+		self.content = { opts.content }
+	else
+		self.content = opts.content
+	end
 
 	self.yank_type = vim.v.event.regtype or "v"
 	self.operation = vim.v.event.operator or "y"

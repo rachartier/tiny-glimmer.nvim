@@ -74,4 +74,71 @@ function M.get_range_yank()
 	}
 end
 
+function M.get_visual_range_yank()
+	local start_mark = vim.api.nvim_buf_get_mark(0, "<")
+	local end_mark = vim.api.nvim_buf_get_mark(0, ">")
+
+	return {
+		start_line = start_mark[1],
+		start_col = start_mark[2],
+		end_line = end_mark[1],
+		end_col = end_mark[2],
+	}
+end
+
+function M.sanitize_content(text, tabstop)
+	local lines = {}
+
+	if tabstop == nil then
+		tabstop = vim.bo.tabstop
+	end
+
+	if type(text) == "string" then
+		text = { text }
+	end
+
+	for _, line in ipairs(text) do
+		line = line:gsub("\t", string.rep(" ", tabstop))
+		table.insert(lines, line)
+	end
+
+	return lines
+end
+
+function M.visual_to_byte_col(line, visual_col)
+	local byte_col = 0
+	local current_col = 0
+	local tabstop = vim.o.tabstop
+	local tab_count = 0
+
+	for char in line:gmatch(".") do
+		if char == "\t" then
+			tab_count = tab_count + 1
+			local tab_width = tabstop - (current_col % tabstop)
+			if current_col + tab_width > visual_col then
+				break
+			end
+			current_col = current_col + tab_width
+			byte_col = byte_col + 1
+		else
+			current_col = current_col + 1
+			byte_col = byte_col + 1
+		end
+		if current_col >= visual_col then
+			break
+		end
+	end
+	return byte_col, tab_count
+end
+
+function M.set_extmark(line, ns_id, col, opts)
+	line = math.max(0, line)
+	col = math.max(0, col)
+
+	opts = opts or {}
+	opts.strict = false
+
+	return vim.api.nvim_buf_set_extmark(0, ns_id, line, col, opts)
+end
+
 return M

@@ -1,49 +1,79 @@
 ---@class AnimationEffect
----@field effect Effect Animation effect implementation
----@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
----@field start_time number Unix timestamp when animation started
----@field active boolean Current animation state
----@field content string[] Lines of text being animated
----@field yank_type string Vim's register type (v, V, or ^V)
----@field operation string Vim operator that triggered animation (y, d, c)
----@field visual_highlight table Visual selection highlight attributes
----@field id number Unique identifier for this animation instance
----@field cursor_line_enabled boolean Whether to show special cursor line animation
----@field cursor_line_color string|nil Hex color code for cursor line highlight
----@field virtual_text_priority number Priority level for virtual text rendering
+---@field type string The type of animation effect
+---@field settings table Animation settings and configuration
+---@field selection table Selection coordinates {start_line, start_col, end_line, end_col}
+---@field start_time number Animation start timestamp
+---@field active boolean Whether the animation is currently active
+---@field content table[] Array of yanked content lines
+---@field yank_type string Type of yank operation
+---@field operation string Operator used for the operation
+---@field visual_highlight table Visual mode highlight settings
+---@field id number Animation effect identifier
+---@field cursor_line_enabled boolean Whether the cursor line is enabled
+---@field cursor_line_color string Cursor line color
+---@field effect function Animation effect function
+---@field virt_text_settings table Virtual text configuration
 local AnimationEffect = {}
 AnimationEffect.__index = AnimationEffect
 
 local tiny_glimmer_ns = vim.api.nvim_create_namespace("tiny-glimmer")
 
 local utils = require("tiny-glimmer.utils")
+local animation_effects = require("tiny-glimmer.effects")
+
+---Validate animation settings
+---@param animation_type string
+---@param animation_settings table
+---@return boolean, string?
+local function validate_settings(animation_type, animation_settings)
+	if not animation_effects[animation_type] and not animation_type == "custom" then
+		return false, string.format("Invalid animation type: %s", animation_type)
+	end
+
+	local required_fields = { "min_duration", "max_duration", "chars_for_max_duration" }
+	for _, field in ipairs(required_fields) do
+		if not animation_settings[field] then
+			return false, string.format("Missing required setting: %s", field)
+		end
+	end
+
+	return true
+end
 
 local animation_pool_id = 0
 
 ---Creates a new animation effect instance
----@param effect Effect The animation effect implementation to use
----@param opts { range: table, content: string|string[], virtual_text_priority?: number } Configuration options
----@return AnimationEffect|nil effect The created animation instance
+---@param animation_type string Type of animation to apply
+---@param animation_settings table Configuration for the animation
+---@param selection table Selection coordinates
+---@param content string[] Array of yanked content lines
+---@return AnimationEffect|nil effect The created animation effect
 ---@return string? error Error message if creation failed
-function AnimationEffect.new(effect, opts)
-	if not opts.range then
-		return nil, "Selection is required"
+function AnimationEffect.new(animation_type, animation_settings, selection, content)
+	-- Validate inputs
+	local is_valid, error_msg = validate_settings(animation_type, animation_settings)
+	if not is_valid then
+		return nil, error_msg
 	end
 
 	local self = setmetatable({}, AnimationEffect)
 
-	self.effect = effect
-	self.range = opts.range
+	self.type = animation_type
+	self.settings = animation_settings
+	self.selection = selection
 	self.start_time = vim.loop.now()
 	self.active = true
 
-	self.content = opts.content
+	if type(content) == "string" then
+		content = { content }
+	end
 
+	self.content = content
 	self.yank_type = vim.v.event.regtype or "v"
 	self.operation = vim.v.event.operator or "y"
 
 	self.visual_highlight = utils.get_highlight("Visual")
-	self.virtual_text_priority = opts.virtual_text_priority or 128
+	self.virt_text_settings = animation_settings.virt_text or {}
 
 	self.id = animation_pool_id
 	animation_pool_id = animation_pool_id + 1
@@ -58,13 +88,19 @@ function AnimationEffect.new(effect, opts)
 		self.cursor_line_color = utils.int_to_hex(cursor_line_hl)
 	end
 
+	if self.type == "custom" then
+		self.effect = self.settings.effect
+	else
+		self.effect = animation_effects[self.type]
+	end
+
 	return self
 end
 
----Computes animation duration based on content length
----@param content string[] Text content to animate
----@param settings { min_duration: number, max_duration: number, chars_for_max_duration: number } Duration configuration
----@return number duration Duration in milliseconds
+---Calculate animation duration based on content length
+---@param content string[] Yanked content lines
+---@param settings table Animation settings
+---@return number duration
 local function calculate_duration(content, settings)
 	if #content ~= 1 then
 		return settings.max_duration
@@ -119,7 +155,6 @@ end
 ---@param line { line_number: number, start_position: number, end_position: number } Line configuration
 local function apply_hl(self, line)
 	local line_index = line.line_number + self.range.start_line
-
 	local hl_group = "TinyGlimmerAnimationHighlight_" .. self.id
 	if self.cursor_line_enabled then
 		local cursor_position = vim.api.nvim_win_get_cursor(0)
@@ -141,7 +176,7 @@ function AnimationEffect:cleanup()
 	self.active = false
 	vim.defer_fn(function()
 		vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, 0, -1)
-	end, self.effect.settings.lingering_time or 0)
+	end, self.settings.lingering_time or 0)
 
 	animation_pool_id = animation_pool_id - 1
 	if animation_pool_id < 0 then
@@ -150,9 +185,10 @@ function AnimationEffect:cleanup()
 end
 
 function AnimationEffect:update_effect(progress)
-	local easing = self.effect.settings.easing or nil
+	local easing = self.settings.easing or nil
 
-	local updated_color, updated_animation_progress = self.effect:update_fn(progress, easing)
+	local updated_color, updated_animation_progress =
+		self.effect(self, self.settings.from_color, self.settings.to_color, progress, easing)
 
 	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = updated_color })
 
@@ -170,9 +206,8 @@ function AnimationEffect:update_effect(progress)
 	return updated_animation_progress
 end
 
----Updates animation state and schedules next frame
----@param refresh_interval_ms number Milliseconds between animation frames
----@return boolean? completed Returns true when animation is finished
+---Update the animation state
+---@param refresh_interval_ms number Interval between updates in milliseconds
 function AnimationEffect:update(refresh_interval_ms)
 	if not self.active then
 		return
@@ -180,12 +215,18 @@ function AnimationEffect:update(refresh_interval_ms)
 
 	local current_time = vim.loop.now()
 	local elapsed_time = current_time - self.start_time
-	local duration = calculate_duration(self.content, self.effect.settings)
+	local duration = calculate_duration(self.content, self.settings)
 	local progress = math.min(elapsed_time / duration, 1)
+
+	if self.settings.min_progress then
+		if progress < self.settings.min_progress then
+			progress = self.settings.min_progress
+		end
+	end
 
 	local updated_animation_progress = self:update_effect(progress)
 
-	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.range.start_line, self.range.end_line + 1)
+	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.selection.start_line, self.selection.end_line + 1)
 
 	local lines_range = compute_lines_range(self, updated_animation_progress)
 	for _, line_range in ipairs(lines_range) do

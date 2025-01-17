@@ -1,5 +1,4 @@
 local M = {}
-local utils = require("tiny-glimmer.utils")
 
 local function get_paste_mode()
 	return vim.opt.paste:get()
@@ -42,12 +41,17 @@ local function animate_paste(opts, mode)
 	restore_paste_mode(paste_mode)
 
 	vim.schedule(function()
-		local range = utils.get_range_last_modification()
+		local start_row, start_col = unpack(vim.api.nvim_buf_get_mark(0, "["))
+		local end_row, end_col = unpack(vim.api.nvim_buf_get_mark(0, "]"))
 
-		require("tiny-glimmer.animation_factory").get_instance():create_from_pool(opts.default_animation, {
-			range = range,
-			content = text,
-		})
+		local selection = {
+			start_line = start_row - 1,
+			start_col = start_col,
+			end_line = end_row - 1,
+			end_col = end_col,
+		}
+
+		require("tiny-glimmer.animation_factory").get_instance():create(opts.default_animation, selection, text)
 	end)
 end
 

@@ -15,16 +15,17 @@ local function search(opts, keys, search_pattern)
 			return
 		end
 
-		local selection = {
+		local range = {
 			start_line = cursor_pos[1] - 1,
 			start_col = cursor_pos[2],
 			end_line = cursor_pos[1] - 1,
 			end_col = cursor_pos[2] + #matches[1].text,
 		}
 
-		require("tiny-glimmer.animation_factory")
-			.get_instance()
-			:create(opts.default_animation, selection, matches[1].text)
+		require("tiny-glimmer.animation_factory").get_instance():create_from_pool(opts.default_animation, {
+			range = range,
+			content = matches[1].text,
+		})
 	end)
 end
 

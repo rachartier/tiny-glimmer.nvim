@@ -2,9 +2,9 @@ local M = {}
 
 local overwrite = require("tiny-glimmer.overwrite")
 local utils = require("tiny-glimmer.utils")
-local effects = require("tiny-glimmer.effects")
 
 local AnimationFactory = require("tiny-glimmer.animation_factory")
+local Effect = require("tiny-glimmer.effect")
 
 local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
 local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
@@ -61,6 +61,7 @@ M.config = {
 		left_to_right = {
 			max_duration = 350,
 			min_duration = 350,
+			min_progress = 0.85,
 			chars_for_max_duration = 25,
 			lingering_time = 50,
 			from_color = hl_visual_bg,
@@ -157,8 +158,17 @@ function M.setup(options)
 	sanitize_highlights(M.config)
 
 	local animation_group = vim.api.nvim_create_augroup("TinyGlimmer", { clear = true })
+	local effects_pool = require("tiny-glimmer.premade_effects")
 
-	AnimationFactory.initialize(M.config, M.config.animations, M.config.refresh_interval_ms)
+	for name, effect_settings in pairs(M.config.animations) do
+		if not effects_pool[name] then
+			effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
+		else
+			effects_pool[name]:update_settings(effect_settings)
+		end
+	end
+
+	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
 
 	vim.api.nvim_create_autocmd("TextYankPost", {
 		group = animation_group,
@@ -167,16 +177,13 @@ function M.setup(options)
 				return
 			end
 
-			local selection = {
-				start_line = vim.fn.line("'[") - 1,
-				start_col = vim.fn.col("'[") - 1,
-				end_line = vim.fn.line("']") - 1,
-				end_col = vim.fn.col("']"),
-			}
-
+			local range = utils.get_range_yank()
 			local yanked_content = vim.v.event.regcontents
 
-			AnimationFactory.get_instance():create(M.config.default_animation, selection, yanked_content)
+			AnimationFactory.get_instance():create_from_pool(M.config.default_animation, {
+				range = range,
+				content = yanked_content,
+			})
 		end,
 	})
 

@@ -92,11 +92,11 @@ require('tiny-glimmer').setup({
 
             -- Keys to paste
             -- Can also be a function that returns a string
-            paste_mapping = "p=`]",
+            paste_mapping = "p",
 
             -- Keys to paste above the cursor
             -- Can also be a function that returns a string
-            Paste_mapping = "P=`]",
+            Paste_mapping = "P",
         },
     },
 

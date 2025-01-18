@@ -25,8 +25,8 @@ M.config = {
 			enabled = true,
 			default_animation = "reverse_fade",
 
-			paste_mapping = "p=`]",
-			Paste_mapping = "P=`]",
+			paste_mapping = "p",
+			Paste_mapping = "P",
 		},
 	},
 

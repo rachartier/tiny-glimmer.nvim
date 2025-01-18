@@ -15,8 +15,8 @@ local AnimationFactory = {}
 AnimationFactory.__index = AnimationFactory
 
 local instance = nil
-local TextAnimation = require("tiny-glimmer.animation.text_animation")
 local TextAnimation = require("tiny-glimmer.animation.premade.text")
+local RectangleAnimation = require("tiny-glimmer.animation.premade.rectangle")
 
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
 	if instance then
@@ -53,6 +53,27 @@ function AnimationFactory:create_text_animation(animation_type, opts)
 	local effect = self.effect_pool[animation_type]
 
 	local animation = TextAnimation.new(effect, opts)
+
+	if animation then
+		animation:start(self.animation_refresh)
+	else
+		error("TinyGlimmer: Failed to create animation")
+	end
+end
+
+function AnimationFactory:create_rectangle_animation(animation_type, opts)
+	if not opts.base.range then
+		error("TinyGlimmer: range is required in opts")
+	end
+
+	if not self.effect_pool[animation_type] then
+		vim.notify("TinyGlimmer: Invalid animation type: " .. animation_type, vim.log.levels.ERROR)
+		return
+	end
+
+	local effect = self.effect_pool[animation_type]
+
+	local animation = RectangleAnimation.new(effect, opts)
 
 	if animation then
 		animation:start(self.animation_refresh)

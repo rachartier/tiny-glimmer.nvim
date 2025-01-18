@@ -14,7 +14,7 @@ function Effect.new(settings, update_fn)
 	return self
 end
 
-function Effect.update_settings(self, settings)
+function Effect:update_settings(settings)
 	self.settings = settings
 end
 

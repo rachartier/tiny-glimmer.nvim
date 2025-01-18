@@ -21,9 +21,8 @@
 local AnimationEffect = {}
 AnimationEffect.__index = AnimationEffect
 
-local tiny_glimmer_ns = vim.api.nvim_create_namespace("tiny-glimmer")
-
 local utils = require("tiny-glimmer.utils")
+local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
 
 local animation_pool_id = 0
 
@@ -140,7 +139,7 @@ local function apply_hl(self, line)
 		end
 	end
 
-	utils.set_extmark(line_index, tiny_glimmer_ns, line.start_position, {
+	utils.set_extmark(line_index, namespace, line.start_position, {
 		virt_text_pos = "overlay",
 		end_col = line.start_position + line.count,
 		hl_group = hl_group,
@@ -152,7 +151,7 @@ end
 function AnimationEffect:cleanup()
 	self.active = false
 	vim.defer_fn(function()
-		vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, 0, -1)
+		vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
 	end, self.effect.settings.lingering_time or 0)
 
 	animation_pool_id = animation_pool_id - 1
@@ -201,7 +200,7 @@ function AnimationEffect:update(refresh_interval_ms)
 
 	local updated_animation_progress = self:update_effect(progress)
 
-	vim.api.nvim_buf_clear_namespace(0, tiny_glimmer_ns, self.range.start_line, self.range.end_line + 1)
+	vim.api.nvim_buf_clear_namespace(0, namespace, self.range.start_line, self.range.end_line + 1)
 
 	local lines_range = compute_lines_range(self, updated_animation_progress)
 	for _, line_range in ipairs(lines_range) do

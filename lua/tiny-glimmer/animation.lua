@@ -4,13 +4,20 @@
 ---@field start_time number Unix timestamp when animation started
 ---@field active boolean Current animation state
 ---@field content string[] Lines of text being animated
----@field yank_type string Vim's register type (v, V, or ^V)
+---@field event_type string Vim's register type (v, V, or ^V)
+---@field event Event Event type information
 ---@field operation string Vim operator that triggered animation (y, d, c)
 ---@field visual_highlight table Visual selection highlight attributes
 ---@field id number Unique identifier for this animation instance
 ---@field cursor_line_enabled boolean Whether to show special cursor line animation
 ---@field cursor_line_color string|nil Hex color code for cursor line highlight
 ---@field virtual_text_priority number Priority level for virtual text rendering
+
+---@class Event
+---@field is_visual boolean
+---@field is_line boolean
+---@field is_visual_block boolean
+
 local AnimationEffect = {}
 AnimationEffect.__index = AnimationEffect
 
@@ -43,8 +50,13 @@ function AnimationEffect.new(effect, opts)
 		self.content = opts.content
 	end
 
-	self.yank_type = vim.v.event.regtype or "v"
-	self.operation = vim.v.event.operator or "y"
+	self.event_type = vim.v.event.regtype
+	self.event = {
+		is_visual = self.event_type == "v",
+		is_line = string.byte(self.event_type or "") == 86,
+		is_visual_block = string.byte(self.event_type or "") == 22,
+	}
+	self.operation = vim.v.event.operator
 
 	self.visual_highlight = utils.get_highlight("Visual")
 	self.virtual_text_priority = opts.virtual_text_priority or 128
@@ -90,28 +102,23 @@ end
 
 local function compute_lines_range(self, animation_progress)
 	local lines = {}
-	local is_Visual = string.byte(self.yank_type) == 22
-	local is_visual = self.yank_type == "v"
 	local start_position = self.range.start_col
 
 	if self.content ~= nil then
 		for i, line_content in ipairs(self.content) do
-			local end_position = #line_content * animation_progress
+			local line_length = #line_content
+			local count = math.ceil((line_length * animation_progress))
 
-			if is_visual then
-				if i == 1 or i == #self.content then
-					end_position = self.range.end_col * animation_progress
-				end
-			elseif is_Visual then
+			if self.event.is_visual_block then
 				-- FIXME: When there is tabs in the line
 				-- and multiple lines
-				-- the extmakr is not correctly placed, offset is wrong
+				-- the extmark is not correctly placed, offset is wrong
 			end
 
 			table.insert(lines, {
 				line_number = i - 1,
-				start_position = (i == 1 or is_Visual) and start_position or 0,
-				end_position = end_position,
+				start_position = (i == 1 or self.event.is_visual_block) and start_position or 0,
+				count = count,
 			})
 		end
 	end
@@ -120,7 +127,7 @@ end
 
 ---Renders one line of the animation effect
 ---@param self AnimationEffect Animation instance
----@param line { line_number: number, start_position: number, end_position: number } Line configuration
+---@param line { line_number: number, start_position: number, count: number } Line configuration
 local function apply_hl(self, line)
 	local line_index = line.line_number + self.range.start_line
 
@@ -134,7 +141,8 @@ local function apply_hl(self, line)
 	end
 
 	utils.set_extmark(line_index, tiny_glimmer_ns, line.start_position, {
-		end_col = line.end_position,
+		virt_text_pos = "overlay",
+		end_col = line.start_position + line.count,
 		hl_group = hl_group,
 		hl_mode = "blend",
 		priority = self.virtual_text_priority,

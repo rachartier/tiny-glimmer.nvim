@@ -1,14 +1,13 @@
 local utils = require("tiny-glimmer.utils")
-local easing_functions = require("tiny-glimmer.easing")
-local Effect = require("tiny-glimmer.effect")
+local easing_functions = require("tiny-glimmer.animation.easing")
+local Effect = require("tiny-glimmer.animation.effect")
 
 local function create_effect(opts)
-	return Effect.new(opts.settings, opts.update_fn)
+	return Effect.new({}, opts.update_fn)
 end
 
 return {
 	fade = create_effect({
-		settings = {},
 		update_fn = function(self, progress, ease)
 			local initial = utils.hex_to_rgb(self.settings.from_color)
 			local final = utils.hex_to_rgb(self.settings.to_color)
@@ -26,7 +25,6 @@ return {
 		end,
 	}),
 	reverse_fade = create_effect({
-		settings = {},
 		update_fn = function(self, progress, ease)
 			local initial = utils.hex_to_rgb(self.settings.from_color)
 			local final = utils.hex_to_rgb(self.settings.to_color)
@@ -43,7 +41,6 @@ return {
 		end,
 	}),
 	bounce = create_effect({
-		settings = {},
 		update_fn = function(self, progress)
 			local oscillation = math.abs(math.sin(progress * math.pi * self.settings.oscillation_count))
 
@@ -60,7 +57,6 @@ return {
 		end,
 	}),
 	left_to_right = create_effect({
-		settings = {},
 		update_fn = function(self, progress)
 			local initial = utils.hex_to_rgb(self.settings.from_color)
 			local final = utils.hex_to_rgb(self.settings.to_color)
@@ -75,7 +71,6 @@ return {
 		end,
 	}),
 	pulse = create_effect({
-		settings = {},
 		update_fn = function(self, progress)
 			local initial = utils.hex_to_rgb(self.settings.from_color)
 			local final = utils.hex_to_rgb(self.settings.to_color)
@@ -93,7 +88,6 @@ return {
 		end,
 	}),
 	rainbow = create_effect({
-		settings = {},
 		update_fn = function(self, progress)
 			local rainbow_colors = {
 				{ r = 255, g = 0, b = 0 },

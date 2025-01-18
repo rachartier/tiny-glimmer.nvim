@@ -187,6 +187,14 @@ function M.setup(options)
 		end,
 	})
 
+	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
+		group = animation_group,
+		callback = function()
+			local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
+			vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+		end,
+	})
+
 	if M.config.overwrite.auto_map then
         -- stylua: ignore
         if M.config.overwrite.search.enabled then

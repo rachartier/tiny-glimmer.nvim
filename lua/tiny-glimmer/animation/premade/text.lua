@@ -13,6 +13,7 @@
 ---@field is_visual boolean
 ---@field is_line boolean
 ---@field is_visual_block boolean
+---@field is_paste boolean
 
 local TextAnimation = {}
 TextAnimation.__index = TextAnimation
@@ -45,6 +46,7 @@ function TextAnimation.new(effect, opts)
 		is_visual = self.event_type == "v",
 		is_line = string.byte(self.event_type or "") == 86,
 		is_visual_block = string.byte(self.event_type or "") == 22,
+		is_paste = opts.is_paste,
 	}
 	self.operation = vim.v.event.operator
 
@@ -75,7 +77,17 @@ local function compute_lines_range(self, animation_progress)
 	if self.content ~= nil then
 		for i, line_content in ipairs(self.content) do
 			local line_length = #line_content
-			local count = math.ceil((line_length * animation_progress))
+			local count = 0
+
+			if self.event.is_paste then
+				if i == #self.content then
+					count = line_length
+				else
+					count = 999999
+				end
+			else
+				count = math.floor(line_length * animation_progress)
+			end
 
 			if self.event.is_visual_block then
 				-- FIXME: When there is tabs in the line

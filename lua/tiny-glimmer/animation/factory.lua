@@ -16,6 +16,7 @@ AnimationFactory.__index = AnimationFactory
 
 local instance = nil
 local TextAnimation = require("tiny-glimmer.animation.text_animation")
+local TextAnimation = require("tiny-glimmer.animation.premade.text")
 
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
 	if instance then

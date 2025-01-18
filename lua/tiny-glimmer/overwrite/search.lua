@@ -22,8 +22,10 @@ local function search(opts, keys, search_pattern)
 			end_col = cursor_pos[2] + #matches[1].text,
 		}
 
-		require("tiny-glimmer.animation_factory").get_instance():create_from_pool(opts.default_animation, {
-			range = range,
+		require("tiny-glimmer.animation.factory").get_instance():create_text_animation(opts.default_animation, {
+			base = {
+				range = range,
+			},
 			content = matches[1].text,
 		})
 	end)

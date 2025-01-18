@@ -15,7 +15,7 @@ local AnimationFactory = {}
 AnimationFactory.__index = AnimationFactory
 
 local instance = nil
-local AnimationEffect = require("tiny-glimmer.animation")
+local TextAnimation = require("tiny-glimmer.animation.text_animation")
 
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
 	if instance then
@@ -39,14 +39,10 @@ end
 --- Create and launch an animation effect from the pool
 --- @param animation_type string The type of animation to create
 --- @param opts CreateAnimationOpts
-function AnimationFactory:create_from_pool(animation_type, opts)
-	if not opts.range then
-		vim.notify("TinyGlimmer: selection is required in opts", vim.log.levels.ERROR)
-		return
+function AnimationFactory:create_text_animation(animation_type, opts)
+	if not opts.base.range then
+		error("TinyGlimmer: range is required in opts")
 	end
-
-	local range = opts.range
-	local content = opts.content
 
 	if not self.effect_pool[animation_type] then
 		vim.notify("TinyGlimmer: Invalid animation type: " .. animation_type, vim.log.levels.ERROR)
@@ -55,16 +51,12 @@ function AnimationFactory:create_from_pool(animation_type, opts)
 
 	local effect = self.effect_pool[animation_type]
 
-	local animation, error_msg = AnimationEffect.new(effect, {
-		range = range,
-		content = content,
-		virtual_text_priority = self.settings.virtual_text_priority,
-	})
+	local animation = TextAnimation.new(effect, opts)
 
 	if animation then
-		animation:update(self.animation_refresh)
+		animation:start(self.animation_refresh)
 	else
-		vim.notify("TinyGlimmer: " .. error_msg, vim.log.levels.ERROR)
+		error("TinyGlimmer: Failed to create animation")
 	end
 end
 

@@ -3,8 +3,8 @@ local M = {}
 local overwrite = require("tiny-glimmer.overwrite")
 local utils = require("tiny-glimmer.utils")
 
-local AnimationFactory = require("tiny-glimmer.animation_factory")
-local Effect = require("tiny-glimmer.effect")
+local AnimationFactory = require("tiny-glimmer.animation.factory")
+local Effect = require("tiny-glimmer.animation.effect")
 
 local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
 local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
@@ -180,8 +180,10 @@ function M.setup(options)
 			local range = utils.get_range_yank()
 			local yanked_content = vim.v.event.regcontents
 
-			AnimationFactory.get_instance():create_from_pool(M.config.default_animation, {
-				range = range,
+			AnimationFactory.get_instance():create_text_animation(M.config.default_animation, {
+				base = {
+					range = range,
+				},
 				content = yanked_content,
 			})
 		end,

@@ -169,8 +169,12 @@ function AnimationEffect:update_effect(progress)
 	vim.api.nvim_set_hl(0, "TinyGlimmerAnimationHighlight_" .. self.id, { bg = updated_color })
 
 	if self.cursor_line_enabled then
-		local updated_color_cursor_line, _ =
-			self.effect(self, self.effect.settings.from_color, self.cursor_line_color, progress, easing)
+		-- TODO: there must be a better way to handle cursor_line color
+		local to_color_saved = self.effect.settings.to_color
+
+		self.effect.settings.to_color = self.cursor_line_color
+		local updated_color_cursor_line, _ = self.effect:update_fn(progress, easing)
+		self.effect.settings.to_color = to_color_saved
 
 		vim.api.nvim_set_hl(
 			0,

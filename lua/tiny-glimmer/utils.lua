@@ -1,5 +1,7 @@
 local M = {}
 
+M.max_number = 2 ^ 31 - 1
+
 ---Converts an integer to a hex color string
 ---@param int number|nil The integer to convert
 ---@return string hex The resulting hex color or "None"

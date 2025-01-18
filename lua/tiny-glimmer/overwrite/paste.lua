@@ -41,12 +41,13 @@ local function animate_paste(opts, mode)
 	restore_paste_mode(paste_mode)
 
 	vim.schedule(function()
-		local range = utils.get_range_last_modification()
+		local range = utils.get_range_yank()
 
 		require("tiny-glimmer.animation.factory").get_instance():create_text_animation(opts.default_animation, {
 			base = {
 				range = range,
 			},
+			is_paste = true,
 			content = text,
 		})
 	end)

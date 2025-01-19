@@ -20,6 +20,7 @@ TextAnimation.__index = TextAnimation
 
 local utils = require("tiny-glimmer.utils")
 local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
+local namespace_id_pool = require("tiny-glimmer.namespace_id_pool")
 local AnimationEffect = require("tiny-glimmer.glimmer_animation")
 
 ---Creates a new TextAnimation instance
@@ -108,7 +109,7 @@ end
 ---Renders one line of the animation effect
 ---@param self TextAnimation Animation instance
 ---@param line table Line configuration
-local function apply_hl(self, line)
+local function apply_hl(self, line, ns_id)
 	local line_index = line.line_number + self.animation.range.start_line
 
 	local hl_group = self.animation:get_hl_group()
@@ -121,6 +122,7 @@ local function apply_hl(self, line)
 	end
 
 	utils.set_extmark(line_index, namespace, line.start_position, {
+		id = ns_id,
 		virt_text_pos = "overlay",
 		end_col = line.start_position + line.count,
 		hl_group = hl_group,
@@ -132,19 +134,26 @@ end
 ---Starts the text animation
 ---@param refresh_interval_ms number Refresh interval in milliseconds
 function TextAnimation:start(refresh_interval_ms)
-	self.animation:start(refresh_interval_ms, #self.content[1], function(update_progress)
-		vim.api.nvim_buf_clear_namespace(
-			0,
-			namespace,
-			self.animation.range.start_line,
-			self.animation.range.end_line + 1
-		)
+	local reserved_ids = namespace_id_pool.reserve_ns_ids(#self.content)
 
-		local lines_range = compute_lines_range(self, update_progress)
-		for _, line_range in ipairs(lines_range) do
-			apply_hl(self, line_range)
-		end
-	end)
+	self.animation:start(refresh_interval_ms, #self.content[1], {
+		on_update = function(update_progress)
+			vim.api.nvim_buf_clear_namespace(
+				0,
+				namespace,
+				self.animation.range.start_line,
+				self.animation.range.end_line + 1
+			)
+
+			local lines_range = compute_lines_range(self, update_progress)
+			for i, line_range in ipairs(lines_range) do
+				apply_hl(self, line_range, reserved_ids[i])
+			end
+		end,
+		on_complete = function()
+			namespace_id_pool.release_ns_ids(reserved_ids)
+		end,
+	})
 end
 
 return TextAnimation

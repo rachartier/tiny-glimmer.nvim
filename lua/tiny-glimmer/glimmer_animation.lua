@@ -113,7 +113,7 @@ end
 ---@param refresh_interval_ms number Refresh interval in milliseconds
 ---@param length number Length of the content to animate
 ---@param callback function Callback function to execute on each update
-function GlimmerAnimation:start(refresh_interval_ms, length, callback)
+function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 	self.active = true
 	self.start_time = vim.loop.now()
 
@@ -126,11 +126,14 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callback)
 			local progress = math.min(elapsed_time / duration, 1)
 			local updated_animation_progress = self:update_effect(progress)
 
-			callback(updated_animation_progress)
+			callbacks.on_update(updated_animation_progress)
 
 			if progress >= 1 then
 				vim.defer_fn(function()
 					self:cleanup()
+					if callbacks.on_complete then
+						callbacks.on_complete()
+					end
 				end, self.effect.settings.lingering_time or 0)
 				break
 			end

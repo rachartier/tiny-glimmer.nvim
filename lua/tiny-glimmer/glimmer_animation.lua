@@ -4,6 +4,11 @@
 ---@field start_time number Unix timestamp when animation started
 ---@field active boolean Current animation state
 
+---@class GlimmerAnimationOpts
+---@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
+---@field overwrite_from_color string|nil Overwrite from color
+---@field overwrite_to_color string|nil Overwrite to color
+
 local GlimmerAnimation = {}
 GlimmerAnimation.__index = GlimmerAnimation
 
@@ -13,7 +18,6 @@ local animation_pool_id = 0
 
 ---Creates a new animation effect instance
 ---@param effect Effect The animation effect implementation to use
----@param opts { range: table, content: string|string[], virtual_text_priority?: number } Configuration options
 ---@return GlimmerAnimation The created animation instance
 function GlimmerAnimation.new(effect, opts)
 	if not opts.range then
@@ -112,7 +116,7 @@ end
 ---Starts the animation
 ---@param refresh_interval_ms number Refresh interval in milliseconds
 ---@param length number Length of the content to animate
----@param callback function Callback function to execute on each update
+---@param callbacks { on_update: function, on_complete?: function } Callbacks for animation events
 function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 	self.active = true
 	self.start_time = vim.loop.now()

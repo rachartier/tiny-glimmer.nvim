@@ -37,10 +37,7 @@ function AnimationFactory.get_instance()
 	return instance
 end
 
---- Create and launch an animation effect from the pool
---- @param animation_type string The type of animation to create
---- @param opts CreateAnimationOpts
-function AnimationFactory:create_text_animation(animation_type, opts)
+function AnimationFactory:_begin_create_animation(animation_type, opts)
 	if not opts.base.range then
 		error("TinyGlimmer: range is required in opts")
 	end
@@ -50,10 +47,10 @@ function AnimationFactory:create_text_animation(animation_type, opts)
 		return
 	end
 
-	local effect = self.effect_pool[animation_type]
+	return self.effect_pool[animation_type]
+end
 
-	local animation = TextAnimation.new(effect, opts)
-
+function AnimationFactory:_create_animation(animation)
 	if animation then
 		animation:start(self.animation_refresh)
 	else
@@ -61,25 +58,23 @@ function AnimationFactory:create_text_animation(animation_type, opts)
 	end
 end
 
+--- Create and launch an animation effect from the pool
+--- @param animation_type string The type of animation to create
+--- @param opts CreateAnimationOpts
+function AnimationFactory:create_text_animation(animation_type, opts)
+	local effect = self:_begin_create_animation(animation_type, opts)
+
+	local animation = TextAnimation.new(effect, opts)
+
+	self:_create_animation(animation)
+end
+
 function AnimationFactory:create_rectangle_animation(animation_type, opts)
-	if not opts.base.range then
-		error("TinyGlimmer: range is required in opts")
-	end
-
-	if not self.effect_pool[animation_type] then
-		vim.notify("TinyGlimmer: Invalid animation type: " .. animation_type, vim.log.levels.ERROR)
-		return
-	end
-
-	local effect = self.effect_pool[animation_type]
+	local effect = self:_begin_create_animation(animation_type, opts)
 
 	local animation = RectangleAnimation.new(effect, opts)
 
-	if animation then
-		animation:start(self.animation_refresh)
-	else
-		error("TinyGlimmer: Failed to create animation")
-	end
+	self:_create_animation(animation)
 end
 
 return AnimationFactory

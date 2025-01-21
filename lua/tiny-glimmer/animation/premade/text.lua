@@ -7,7 +7,7 @@
 ---@field cursor_line_enabled boolean Whether to show special cursor line animation
 ---@field cursor_line_color string|nil Hex color code for cursor line highlight
 ---@field virtual_text_priority number Priority level for virtual text rendering
----@field animation AnimationEffect Animation effect instance
+---@field animation GlimmerAnimation Animation effect instance
 
 ---@class Event
 ---@field is_visual boolean

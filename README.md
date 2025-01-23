@@ -102,11 +102,13 @@ require('tiny-glimmer').setup({
 
 
     -- Animations for other operations
-    others = {
+    presets = {
 
-        -- Enable animation on cursorline on buffer change, command line exit and win change.
-        line = {
+        -- Enable animation on cursoroline when a event in `on_events` is triggered
+        -- Similar to `pulsar.el`
+        pulsar = {
             enabled = false,
+            on_events = { "CursorMoved", "CmdlineEnter", "WinEnter" },
             default_animation = {
                 name = "fade",
 

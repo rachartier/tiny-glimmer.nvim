@@ -30,9 +30,11 @@ M.config = {
 		},
 	},
 
-	others = {
-		line = {
+	presets = {
+		pulsar = {
 			enabled = false,
+
+			on_event = { "WinEnter", "CmdlineLeave", "BufEnter" },
 			default_animation = {
 				name = "fade",
 
@@ -169,7 +171,7 @@ local function sanitize_highlights(options)
 		highlight.to_color = process_color(highlight.to_color, name, false)
 	end
 
-	for name, other in pairs(options.others) do
+	for name, other in pairs(options.presets) do
 		if other.default_animation then
 			local animation = other.default_animation
 
@@ -258,14 +260,16 @@ function M.setup(options)
 		vim.opt.hlsearch = false
 	end
 
-	if M.config.others.line.enabled then
-		vim.api.nvim_create_autocmd({ "WinEnter", "CmdlineLeave", "BufEnter" }, {
+	if M.config.presets.pulsar.enabled then
+		local pulsar = M.config.presets.pulsar
+
+		vim.api.nvim_create_autocmd(pulsar.on_event, {
 			group = animation_group,
 			callback = function()
 				vim.schedule(function()
 					local pos = vim.api.nvim_win_get_cursor(0)
 
-					AnimationFactory.get_instance():create_line_animation(M.config.others.line.default_animation, {
+					AnimationFactory.get_instance():create_line_animation(M.config.presets.pulsar.default_animation, {
 						base = {
 							range = {
 								start_line = pos[1] - 1,

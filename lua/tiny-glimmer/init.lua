@@ -47,6 +47,20 @@ M.config = {
 				},
 			},
 		},
+		cursorline = {
+			enabled = true,
+
+			on_event = { "ModeChanged" },
+			blend = 0.24,
+			default_animation = {
+				name = "fade",
+
+				settings = {
+					max_duration = 800,
+					min_duration = 800,
+				},
+			},
+		},
 	},
 
 	default_animation = "fade",
@@ -282,6 +296,10 @@ function M.setup(options)
 				end)
 			end,
 		})
+	end
+
+	if M.config.presets.cursorline.enabled then
+		require("tiny-glimmer.presets.cursorline").init(M.config.presets.cursorline)
 	end
 end
 

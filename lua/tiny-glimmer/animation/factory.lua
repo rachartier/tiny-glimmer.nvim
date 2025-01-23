@@ -17,6 +17,7 @@ AnimationFactory.__index = AnimationFactory
 local instance = nil
 local TextAnimation = require("tiny-glimmer.animation.premade.text")
 local RectangleAnimation = require("tiny-glimmer.animation.premade.rectangle")
+local LineAnimation = require("tiny-glimmer.animation.premade.line")
 
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
 	if instance then
@@ -73,6 +74,14 @@ function AnimationFactory:create_rectangle_animation(animation_type, opts)
 	local effect = self:_begin_create_animation(animation_type, opts)
 
 	local animation = RectangleAnimation.new(effect, opts)
+
+	self:_create_animation(animation)
+end
+
+function AnimationFactory:create_line_animation(animation_type, opts)
+	local effect = self:_begin_create_animation(animation_type, opts)
+
+	local animation = LineAnimation.new(effect, opts)
 
 	self:_create_animation(animation)
 end

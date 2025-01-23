@@ -18,96 +18,109 @@
 local AnimationFactory = {}
 AnimationFactory.__index = AnimationFactory
 
-local instance = nil
-local TextAnimation = require("tiny-glimmer.animation.premade.text")
-local RectangleAnimation = require("tiny-glimmer.animation.premade.rectangle")
-local LineAnimation = require("tiny-glimmer.animation.premade.line")
+--- Validation and initialization helpers
+local function validate_animation_type(effect_pool, animation_name)
+	if not effect_pool[animation_name] then
+		error(string.format("Invalid animation type: %s", animation_name))
+	end
+end
 
+local function merge_settings(base_settings, overwrite_settings)
+	return vim.tbl_extend("force", base_settings, overwrite_settings or {})
+end
+
+--- Initialize the AnimationFactory singleton
+--- @param opts? AnimationFactorySettings Configuration options
+--- @param effect_pool? table Animation effect types
+--- @param animation_refresh? number Animation refresh rate in ms
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
-	if instance then
-		vim.notify("TinyGlimmer: AnimationFactory is already initialized.", vim.log.levels.WARN)
-		return
+	if AnimationFactory.instance then
+		vim.notify("TinyGlimmer: AnimationFactory already initialized", vim.log.levels.WARN)
+		return AnimationFactory.instance
 	end
 
-	instance = setmetatable({}, AnimationFactory)
-	instance.settings = opts or {}
-	instance.effect_pool = effect_pool or {}
-	instance.animation_refresh = animation_refresh or 1
+	AnimationFactory.instance = setmetatable({
+		settings = opts or {},
+		effect_pool = effect_pool or {},
+		animation_refresh = animation_refresh or 1,
+		buffers = {},
+	}, AnimationFactory)
+
+	return AnimationFactory.instance
 end
 
+--- Get the AnimationFactory singleton instance
+--- @return AnimationFactory
 function AnimationFactory.get_instance()
-	if not instance then
-		vim.notify("TinyGlimmer: AnimationFactory is not initialized.", vim.log.levels.ERROR)
+	if not AnimationFactory.instance then
+		error("TinyGlimmer: AnimationFactory not initialized")
 	end
-	return instance
+	return AnimationFactory.instance
 end
 
-function AnimationFactory:_begin_create_animation(animation_type, opts)
+--- Prepare animation configuration
+--- @param buffer number Neovim buffer handle
+--- @param animation_type string|AnimationType Animation type details
+--- @param opts table Animation creation options
+--- @return table Prepared animation effect
+function AnimationFactory:_prepare_animation_effect(buffer, animation_type, opts)
 	if not opts.base.range then
-		error("TinyGlimmer: range is required in opts")
+		error("TinyGlimmer: Range is required in options")
 	end
 
-	local animation_name = ""
-	local animation_overwrite_settings = {}
+	self.buffers[buffer] = self.buffers[buffer] or { animations = {} }
 
-	if type(animation_type) == "table" then
-		animation_name = animation_type.name
-		animation_overwrite_settings = animation_type.settings
-	else
-		animation_name = animation_type
-	end
+	local animation_name = type(animation_type) == "table" and animation_type.name or animation_type
 
-	if not self.effect_pool[animation_name] then
-		vim.notify("TinyGlimmer: Invalid animation type: " .. animation_type, vim.log.levels.ERROR)
-		return
-	end
+	validate_animation_type(self.effect_pool, animation_name)
 
-	local effect = nil
-
-	if vim.tbl_isempty(animation_overwrite_settings) then
-		effect = self.effect_pool[animation_name]
-	else
-		effect = vim.deepcopy(self.effect_pool[animation_name])
-	end
-
-	effect.settings = vim.tbl_extend("force", effect.settings, animation_overwrite_settings)
+	local effect = vim.deepcopy(self.effect_pool[animation_name])
+	effect.settings = merge_settings(effect.settings, type(animation_type) == "table" and animation_type.settings or {})
 
 	return effect
 end
 
-function AnimationFactory:_create_animation(animation)
-	if animation then
-		animation:start(self.animation_refresh)
-	else
+--- Manage animation lifecycle in a buffer
+--- @param animation_obj table Animation object
+--- @param buffer number Neovim buffer handle
+function AnimationFactory:_manage_animation(animation_obj, buffer)
+	if not animation_obj then
 		error("TinyGlimmer: Failed to create animation")
 	end
+
+	local animation = animation_obj.animation
+	local line_key = animation.range.start_line
+
+	-- Stop any existing animation on this line
+	if self.buffers[buffer].animations[line_key] then
+		self.buffers[buffer].animations[line_key]:stop()
+	end
+
+	-- Start new animation
+	self.buffers[buffer].animations[line_key] = animation_obj
+	animation_obj:start(self.animation_refresh, function()
+		self.buffers[buffer].animations[line_key] = nil
+	end)
 end
 
---- Create and launch an animation effect from the pool
---- @param animation_type string|AnimationType The type of animation to create
---- @param opts CreateAnimationOpts
+--- Create and launch a text animation
+--- @param animation_type string|AnimationType Animation type
+--- @param opts CreateAnimationOpts Animation options
 function AnimationFactory:create_text_animation(animation_type, opts)
-	local effect = self:_begin_create_animation(animation_type, opts)
-
-	local animation = TextAnimation.new(effect, opts)
-
-	self:_create_animation(animation)
+	local buffer = vim.api.nvim_get_current_buf()
+	local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
+	local animation = require("tiny-glimmer.animation.premade.text").new(effect, opts)
+	self:_manage_animation(animation, buffer)
 end
 
-function AnimationFactory:create_rectangle_animation(animation_type, opts)
-	local effect = self:_begin_create_animation(animation_type, opts)
-
-	local animation = RectangleAnimation.new(effect, opts)
-
-	self:_create_animation(animation)
-end
-
+--- Create and launch a line animation
+--- @param animation_type string|AnimationType Animation type
+--- @param opts CreateAnimationOpts Animation options
 function AnimationFactory:create_line_animation(animation_type, opts)
-	local effect = self:_begin_create_animation(animation_type, opts)
-
-	local animation = LineAnimation.new(effect, opts)
-
-	self:_create_animation(animation)
+	local buffer = vim.api.nvim_get_current_buf()
+	local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
+	local animation = require("tiny-glimmer.animation.premade.line").new(effect, opts)
+	self:_manage_animation(animation, buffer)
 end
 
 return AnimationFactory

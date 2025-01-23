@@ -109,7 +109,7 @@ end
 ---Renders one line of the animation effect
 ---@param self TextAnimation Animation instance
 ---@param line table Line configuration
-local function apply_hl(self, line, ns_id)
+local function apply_hl(self, line)
 	local line_index = line.line_number + self.animation.range.start_line
 
 	local hl_group = self.animation:get_hl_group()
@@ -122,7 +122,7 @@ local function apply_hl(self, line, ns_id)
 	end
 
 	utils.set_extmark(line_index, namespace, line.start_position, {
-		id = ns_id,
+		id = self.animation:get_reserved_id(),
 		virt_text_pos = "overlay",
 		end_col = line.start_position + line.count,
 		hl_group = hl_group,
@@ -133,9 +133,8 @@ end
 
 ---Starts the text animation
 ---@param refresh_interval_ms number Refresh interval in milliseconds
-function TextAnimation:start(refresh_interval_ms)
-	local reserved_ids = namespace_id_pool.reserve_ns_ids(#self.content)
-
+---@param on_complete function Callback function when animation is complete
+function TextAnimation:start(refresh_interval_ms, on_complete)
 	self.animation:start(refresh_interval_ms, #self.content[1], {
 		on_update = function(update_progress)
 			vim.api.nvim_buf_clear_namespace(
@@ -146,14 +145,20 @@ function TextAnimation:start(refresh_interval_ms)
 			)
 
 			local lines_range = compute_lines_range(self, update_progress)
-			for i, line_range in ipairs(lines_range) do
-				apply_hl(self, line_range, reserved_ids[i])
+			for _, line_range in ipairs(lines_range) do
+				apply_hl(self, line_range)
 			end
 		end,
 		on_complete = function()
-			namespace_id_pool.release_ns_ids(reserved_ids)
+			if on_complete then
+				on_complete()
+			end
 		end,
 	})
+end
+
+function TextAnimation:stop()
+	self.animation:stop()
 end
 
 return TextAnimation

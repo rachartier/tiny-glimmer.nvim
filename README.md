@@ -103,8 +103,7 @@ require('tiny-glimmer').setup({
 
     -- Animations for other operations
     presets = {
-
-        -- Enable animation on cursorline when a event in `on_events` is triggered
+        -- Enable animation on cursorline when an event in `on_events` is triggered
         -- Similar to `pulsar.el`
         pulsar = {
             enabled = false,

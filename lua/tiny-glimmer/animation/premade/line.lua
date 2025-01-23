@@ -3,6 +3,7 @@
 ---@field cursor_line_color string|nil Hex color code for cursor line highlight
 ---@field virtual_text_priority number Priority level for virtual text rendering
 ---@field animation GlimmerAnimation Animation effect instance
+
 local LineAnimation = {}
 LineAnimation.__index = LineAnimation
 
@@ -13,7 +14,7 @@ local AnimationEffect = require("tiny-glimmer.glimmer_animation")
 
 --- Creates anew LineAnimation Instance
 ---@param effect any The animiation effect implementation to use
----aram opts table Configuration options
+---@param opts table Configuration options
 ---@return LineAnimation The created LineAnimation instance
 function LineAnimation.new(effect, opts)
 	local self = setmetatable({}, LineAnimation)

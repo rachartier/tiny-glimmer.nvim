@@ -28,10 +28,22 @@ M.config = {
 			paste_mapping = "p",
 			Paste_mapping = "P",
 		},
-		-- TODO: This is not exactly an 'override', where to place?
+	},
+
+	others = {
 		line = {
-			enabled = false,
-			default_animation = "fade",
+			enabled = true,
+			default_animation = {
+				name = "fade",
+
+				settings = {
+					max_duration = 1000,
+					min_duration = 1000,
+
+					from_color = "DiffDelete",
+					to_color = "Normal",
+				},
+			},
 		},
 	},
 
@@ -156,6 +168,19 @@ local function sanitize_highlights(options)
 		highlight.from_color = process_color(highlight.from_color, name, true)
 		highlight.to_color = process_color(highlight.to_color, name, false)
 	end
+
+	for name, other in pairs(options.others) do
+		if other.default_animation then
+			local animation = other.default_animation
+
+			if type(animation) ~= "table" then
+				return
+			end
+
+			animation.settings.from_color = process_color(animation.settings.from_color, name, true)
+			animation.settings.to_color = process_color(animation.settings.to_color, name, false)
+		end
+	end
 end
 
 function M.setup(options)
@@ -233,12 +258,13 @@ function M.setup(options)
 		vim.opt.hlsearch = false
 	end
 
-	if M.config.overwrite.line.enabled then
-		vim.api.nvim_create_autocmd({ "WinEnter", "CmdlineLeave" }, {
+	if M.config.others.line.enabled then
+		vim.api.nvim_create_autocmd({ "WinEnter", "CmdlineLeave", "BufEnter" }, {
 			group = animation_group,
 			callback = function()
 				local pos = vim.api.nvim_win_get_cursor(0)
-				AnimationFactory.get_instance():create_line_animation(M.config.overwrite.line.default_animation, {
+
+				AnimationFactory.get_instance():create_line_animation(M.config.others.line.default_animation, {
 					base = {
 						range = {
 							start_line = pos[1] - 1,

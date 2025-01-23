@@ -131,6 +131,26 @@ Here’s the default configuration:
         },
     
     
+        -- Animations for other operations
+        others = {
+    
+            -- Enable animation on cursorline on buffer change, command line exit and win change.
+            line = {
+                enabled = false,
+                default_animation = {
+                    name = "fade",
+    
+                    settings = {
+                        max_duration = 1000,
+                        min_duration = 1000,
+    
+                        from_color = "DiffDelete",
+                        to_color = "Normal",
+                    },
+                },
+            },
+        },
+    
         -- Only use if you have a transparent background
         -- It will override the highlight group background color for `to_color` in all animations
         transparency_color = nil,

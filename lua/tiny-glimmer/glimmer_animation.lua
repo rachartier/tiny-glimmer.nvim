@@ -78,6 +78,8 @@ function GlimmerAnimation:cleanup()
 		vim.api.nvim_buf_del_extmark(self.buffer, namespace, id)
 	end
 
+	vim.api.nvim_buf_clear_namespace(0, namespace, self.range.start_line, self.range.end_line + 1)
+
 	animation_pool_id = animation_pool_id - 1
 	if animation_pool_id < 0 then
 		animation_pool_id = 0

@@ -7,6 +7,10 @@
 ---@field animation_refresh number The refresh rate of the animation (in ms)
 ---@field instance AnimationFactory
 
+---@class AnimationType
+---@field name string
+---@field settings table
+
 ---@class CreateAnimationOpts
 ---@field range table {start_line: number, start_col: number, end_line: number, end_col: number}
 ---@field content string[]|nil Content of the animation
@@ -17,6 +21,7 @@ AnimationFactory.__index = AnimationFactory
 local instance = nil
 local TextAnimation = require("tiny-glimmer.animation.premade.text")
 local RectangleAnimation = require("tiny-glimmer.animation.premade.rectangle")
+local LineAnimation = require("tiny-glimmer.animation.premade.line")
 
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
 	if instance then
@@ -42,12 +47,32 @@ function AnimationFactory:_begin_create_animation(animation_type, opts)
 		error("TinyGlimmer: range is required in opts")
 	end
 
-	if not self.effect_pool[animation_type] then
+	local animation_name = ""
+	local animation_overwrite_settings = {}
+
+	if type(animation_type) == "table" then
+		animation_name = animation_type.name
+		animation_overwrite_settings = animation_type.settings
+	else
+		animation_name = animation_type
+	end
+
+	if not self.effect_pool[animation_name] then
 		vim.notify("TinyGlimmer: Invalid animation type: " .. animation_type, vim.log.levels.ERROR)
 		return
 	end
 
-	return self.effect_pool[animation_type]
+	local effect = nil
+
+	if vim.tbl_isempty(animation_overwrite_settings) then
+		effect = self.effect_pool[animation_name]
+	else
+		effect = vim.deepcopy(self.effect_pool[animation_name])
+	end
+
+	effect.settings = vim.tbl_extend("force", effect.settings, animation_overwrite_settings)
+
+	return effect
 end
 
 function AnimationFactory:_create_animation(animation)
@@ -59,7 +84,7 @@ function AnimationFactory:_create_animation(animation)
 end
 
 --- Create and launch an animation effect from the pool
---- @param animation_type string The type of animation to create
+--- @param animation_type string|AnimationType The type of animation to create
 --- @param opts CreateAnimationOpts
 function AnimationFactory:create_text_animation(animation_type, opts)
 	local effect = self:_begin_create_animation(animation_type, opts)
@@ -73,6 +98,14 @@ function AnimationFactory:create_rectangle_animation(animation_type, opts)
 	local effect = self:_begin_create_animation(animation_type, opts)
 
 	local animation = RectangleAnimation.new(effect, opts)
+
+	self:_create_animation(animation)
+end
+
+function AnimationFactory:create_line_animation(animation_type, opts)
+	local effect = self:_begin_create_animation(animation_type, opts)
+
+	local animation = LineAnimation.new(effect, opts)
 
 	self:_create_animation(animation)
 end

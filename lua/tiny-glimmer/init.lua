@@ -32,7 +32,7 @@ M.config = {
 
 	others = {
 		line = {
-			enabled = true,
+			enabled = false,
 			default_animation = {
 				name = "fade",
 

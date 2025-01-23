@@ -32,7 +32,7 @@ M.config = {
 
 	presets = {
 		pulsar = {
-			enabled = true,
+			enabled = false,
 
 			on_event = { "WinEnter", "CmdlineLeave", "BufEnter" },
 			default_animation = {

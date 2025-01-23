@@ -262,18 +262,20 @@ function M.setup(options)
 		vim.api.nvim_create_autocmd({ "WinEnter", "CmdlineLeave", "BufEnter" }, {
 			group = animation_group,
 			callback = function()
-				local pos = vim.api.nvim_win_get_cursor(0)
+				vim.schedule(function()
+					local pos = vim.api.nvim_win_get_cursor(0)
 
-				AnimationFactory.get_instance():create_line_animation(M.config.others.line.default_animation, {
-					base = {
-						range = {
-							start_line = pos[1] - 1,
-							start_col = 0,
-							end_line = pos[1],
-							end_col = 0,
+					AnimationFactory.get_instance():create_line_animation(M.config.others.line.default_animation, {
+						base = {
+							range = {
+								start_line = pos[1] - 1,
+								start_col = 0,
+								end_line = pos[1],
+								end_col = 0,
+							},
 						},
-					},
-				})
+					})
+				end)
 			end,
 		})
 	end

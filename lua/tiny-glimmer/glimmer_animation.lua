@@ -3,6 +3,12 @@
 ---@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
 ---@field start_time number Unix timestamp when animation started
 ---@field active boolean Current animation state
+---@field id number Animation ID
+---@field co thread Lua coroutine
+---@field overwrite_from_color string|nil Overwrite from color
+---@field overwrite_to_color string|nil Overwrite to color
+---@field reserved_ids table Reserved namespace IDs
+---@field index_reserved_ids number Index of the reserved namespace IDs
 
 ---@class GlimmerAnimationOpts
 ---@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
@@ -13,6 +19,7 @@ local GlimmerAnimation = {}
 GlimmerAnimation.__index = GlimmerAnimation
 
 local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
+local namespace_id_pool = require("tiny-glimmer.namespace_id_pool")
 
 local animation_pool_id = 0
 
@@ -39,6 +46,11 @@ function GlimmerAnimation.new(effect, opts)
 	self.overwrite_from_color = opts.overwrite_from_color
 	self.overwrite_to_color = opts.overwrite_to_color
 
+	self.reserved_ids = {}
+	self.index_reserved_ids = 1
+
+	self.buffer = vim.api.nvim_get_current_buf()
+
 	animation_pool_id = animation_pool_id + 1
 
 	return self
@@ -62,7 +74,9 @@ end
 function GlimmerAnimation:cleanup()
 	self.active = false
 
-	vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+	for _, id in ipairs(self.reserved_ids) do
+		vim.api.nvim_buf_del_extmark(self.buffer, namespace, id)
+	end
 
 	animation_pool_id = animation_pool_id - 1
 	if animation_pool_id < 0 then
@@ -111,6 +125,27 @@ end
 ---Stops the animation
 function GlimmerAnimation:stop()
 	self.active = false
+	self:cleanup()
+end
+
+--- Gets the total reserved namespace IDs
+--- @return table The reserved namespace IDs
+function GlimmerAnimation:get_reserved_ids()
+	return self.reserved_ids
+end
+
+--- Gets a reserved namespace ID from the pool
+--- @return number The reserved namespace ID
+function GlimmerAnimation:get_reserved_id()
+	local id = self.reserved_ids[self.index_reserved_ids]
+	self.index_reserved_ids = self.index_reserved_ids + 1
+
+	-- Should not happen, but just in case
+	if self.index_reserved_ids > #self.reserved_ids then
+		self.index_reserved_ids = 1
+	end
+
+	return id
 end
 
 ---Starts the animation
@@ -120,6 +155,7 @@ end
 function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 	self.active = true
 	self.start_time = vim.loop.now()
+	self.reserved_ids = namespace_id_pool.reserve_ns_ids(self.range.end_line - self.range.start_line)
 
 	self.co = coroutine.create(function()
 		while self.active do

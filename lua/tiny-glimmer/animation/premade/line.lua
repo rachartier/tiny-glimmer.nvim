@@ -36,12 +36,14 @@ function LineAnimation.new(effect, opts)
 			overwrite_to_color = utils.int_to_hex(cursor_line_hl),
 		})
 	end
+
 	self.animation = AnimationEffect.new(effect, animation_opts)
+	self.reserved_ids = {}
 
 	return self
 end
 
-local function apply_hl(self, line, ns_id)
+local function apply_hl(self, line)
 	local line_index = self.animation.range.start_line
 	local hl_group = self.animation:get_hl_group()
 	if self.cursor_line_enabled then
@@ -53,7 +55,7 @@ local function apply_hl(self, line, ns_id)
 	end
 
 	utils.set_extmark(line - 1, namespace, 0, {
-		id = ns_id,
+		id = self.animation:get_reserved_id(),
 		end_col = 0,
 		hl_eol = true,
 		end_row = line,
@@ -62,9 +64,8 @@ local function apply_hl(self, line, ns_id)
 	})
 end
 
-function LineAnimation:start(refresh_interval_ms)
+function LineAnimation:start(refresh_interval_ms, on_complete)
 	local length = self.animation.range.end_line - self.animation.range.start_line
-	local reserved_ids = namespace_id_pool.reserve_ns_ids(length)
 
 	self.animation:start(refresh_interval_ms, length or 1, {
 		on_update = function(update_progress)
@@ -76,13 +77,20 @@ function LineAnimation:start(refresh_interval_ms)
 			)
 
 			for i = 1, length do
-				apply_hl(self, i + self.animation.range.start_line, reserved_ids[i])
+				apply_hl(self, i + self.animation.range.start_line)
 			end
 		end,
 		on_complete = function()
-			namespace_id_pool.release_ns_ids(reserved_ids)
+			namespace_id_pool.release_ns_ids(self.reserved_ids)
+			if on_complete then
+				on_complete()
+			end
 		end,
 	})
+end
+
+function LineAnimation:stop()
+	self.animation:stop()
 end
 
 return LineAnimation

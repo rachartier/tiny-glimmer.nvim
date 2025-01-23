@@ -1,5 +1,7 @@
 local M = {}
 
+local MAX_COLOR_VALUE = 255
+local HEX_BASE = 16
 M.max_number = 2 ^ 31 - 1
 
 ---Converts an integer to a hex color string
@@ -76,6 +78,17 @@ function M.get_range_yank()
 	}
 end
 
+function M.get_range_line()
+	local line = vim.fn.getline(".")
+
+	return {
+		start_line = line,
+		start_col = 0,
+		end_line = line,
+		end_col = #line,
+	}
+end
+
 function M.get_visual_range_yank()
 	local start_mark = vim.api.nvim_buf_get_mark(0, "<")
 	local end_mark = vim.api.nvim_buf_get_mark(0, ">")
@@ -96,6 +109,28 @@ function M.set_extmark(line, ns_id, col, opts)
 	opts.strict = false
 
 	return vim.api.nvim_buf_set_extmark(0, ns_id, line, col, opts)
+end
+
+function M.blend(foreground, background, alpha)
+	-- Convert hex alpha to decimal if needed
+	if type(alpha) == "string" then
+		alpha = tonumber(alpha, HEX_BASE) / 0xff
+	end
+
+	-- Validate alpha range
+	alpha = math.max(0, math.min(1, alpha or 0))
+
+	local fg = M.hex_to_rgb(foreground)
+	local bg = M.hex_to_rgb(background)
+
+	---@param channel string
+	---@return number
+	local function blend_channel(channel)
+		local value = (alpha * fg[channel] + ((1 - alpha) * bg[channel]))
+		return math.floor(math.min(math.max(0, value), MAX_COLOR_VALUE) + 0.5)
+	end
+
+	return string.format("#%02X%02X%02X", blend_channel("r"), blend_channel("g"), blend_channel("b"))
 end
 
 return M

@@ -123,4 +123,14 @@ function AnimationFactory:create_line_animation(animation_type, opts)
 	self:_manage_animation(animation, buffer)
 end
 
+--- Create and launch a cursorline animation
+--- @param animation_type string|AnimationType Animation type
+--- @param opts CreateAnimationOpts Animation options
+function AnimationFactory:create_cursorline_animation(animation_type, opts)
+	local buffer = vim.api.nvim_get_current_buf()
+	local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
+	local animation = require("tiny-glimmer.animation.premade.cursorline").new(effect, opts)
+	self:_manage_animation(animation, buffer)
+end
+
 return AnimationFactory

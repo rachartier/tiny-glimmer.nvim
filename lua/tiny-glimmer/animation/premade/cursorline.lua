@@ -23,8 +23,6 @@ function CursorLineAnimation.new(effect, opts)
 		error("opts.base is required")
 	end
 
-	self.virtual_text_priority = opts.virtual_text_priority or 128
-
 	local animation_opts = opts.base
 
 	self.animation = AnimationEffect.new(effect, animation_opts)

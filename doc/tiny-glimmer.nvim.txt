@@ -134,7 +134,7 @@ Here’s the default configuration:
         -- Animations for other operations
         presets = {
     
-            -- Enable animation on cursoroline when a event in `on_events` is triggered
+            -- Enable animation on cursorline when a event in `on_events` is triggered
             -- Similar to `pulsar.el`
             pulsar = {
                 enabled = false,

@@ -3,7 +3,6 @@
 ---@field cursor_line_color string|nil Hex color code for cursor line highlight
 ---@field virtual_text_priority number Priority level for virtual text rendering
 ---@field animation GlimmerAnimation Animation effect instance
----@field old_msgarea vim.api.keyset.highlight
 local LineAnimation = {}
 LineAnimation.__index = LineAnimation
 
@@ -23,7 +22,6 @@ function LineAnimation.new(effect, opts)
 		error("opts.base is required")
 	end
 
-	self.old_msgarea = utils.get_highlight("MsgArea")
 	self.virtual_text_priority = opts.virtual_text_priority or 128
 
 	local cursor_line_hl = utils.get_highlight("CursorLine").bg

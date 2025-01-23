@@ -28,6 +28,11 @@ M.config = {
 			paste_mapping = "p",
 			Paste_mapping = "P",
 		},
+		-- TODO: This is not exactly an 'override', where to place?
+		line = {
+			enabled = false,
+			default_animation = "fade",
+		},
 	},
 
 	default_animation = "fade",
@@ -226,6 +231,25 @@ function M.setup(options)
 			end,
 		})
 		vim.opt.hlsearch = false
+	end
+
+	if M.config.overwrite.line.enabled then
+		vim.api.nvim_create_autocmd({ "WinEnter", "CmdlineLeave" }, {
+			group = animation_group,
+			callback = function()
+				local pos = vim.api.nvim_win_get_cursor(0)
+				AnimationFactory.get_instance():create_line_animation(M.config.overwrite.line.default_animation, {
+					base = {
+						range = {
+							start_line = pos[1] - 1,
+							start_col = 0,
+							end_line = pos[1],
+							end_col = 0,
+						},
+					},
+				})
+			end,
+		})
 	end
 end
 

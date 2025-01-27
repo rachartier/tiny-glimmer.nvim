@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 23
+*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2025 January 27
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -95,6 +95,10 @@ Here’s the default configuration:
 >lua
     require('tiny-glimmer').setup({
         enabled = true,
+    
+        -- Disable this if you wants to debug highlighting issues
+        disable_warnings = true,
+    
         default_animation = "fade",
         refresh_interval_ms = 6,
     

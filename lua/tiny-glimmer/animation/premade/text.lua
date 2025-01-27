@@ -84,7 +84,7 @@ local function compute_lines_range(self, animation_progress)
 				if i == #self.content then
 					count = line_length
 				else
-					count = 999999
+					count = 9999
 				end
 			else
 				count = math.floor(line_length * animation_progress)

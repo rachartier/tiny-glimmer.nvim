@@ -11,6 +11,7 @@ local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 
 M.config = {
 	enabled = true,
+	disable_warnings = true,
 
 	overwrite = {
 		auto_map = true,
@@ -126,7 +127,7 @@ local function sanitize_highlights(options)
 	local normal_bg = utils.get_highlight("Normal").bg
 	local is_transparent = normal_bg == nil or normal_bg == "None"
 
-	if is_transparent and not options.transparency_color then
+	if is_transparent and not options.transparency_color and not options.disable_warnings then
 		vim.notify(
 			"TinyGlimmer: Normal highlight group has a transparent background.\n"
 				.. "Please set the transparency_color option to a valid color",
@@ -148,15 +149,17 @@ local function sanitize_highlights(options)
 
 			if not is_transparent then
 				local default_highlight = is_from_color and "Visual" or "Normal"
-				vim.notify(
-					string.format(
-						"TinyGlimmer: %s_color is set to None for %s animation\n" .. "Defaulting to %s highlight",
-						is_from_color and "from" or "to",
-						highlight_name,
-						default_highlight
-					),
-					vim.log.levels.WARN
-				)
+				if not options.disable_warnings then
+					vim.notify(
+						string.format(
+							"TinyGlimmer: %s_color is set to None for %s animation\n" .. "Defaulting to %s highlight",
+							is_from_color and "from" or "to",
+							highlight_name,
+							default_highlight
+						),
+						vim.log.levels.WARN
+					)
+				end
 				return is_from_color and hl_visual_bg or hl_normal_bg
 			else
 				return "#000000"

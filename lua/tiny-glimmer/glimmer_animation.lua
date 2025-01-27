@@ -172,7 +172,7 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 
 			if progress >= 1 then
 				vim.defer_fn(function()
-					self:cleanup()
+					self:stop()
 					if callbacks.on_complete then
 						callbacks.on_complete()
 					end

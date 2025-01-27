@@ -16,9 +16,9 @@ return {
 			local fn = easing_functions[ease]
 
 			current = {
-				r = fn(progress, initial.r, final.r - initial.r, 1),
-				g = fn(progress, initial.g, final.g - initial.g, 1),
-				b = fn(progress, initial.b, final.b - initial.b, 1),
+				r = utils.clamp(fn(progress, initial.r, final.r - initial.r, 1), 0, 255),
+				g = utils.clamp(fn(progress, initial.g, final.g - initial.g, 1), 0, 255),
+				b = utils.clamp(fn(progress, initial.b, final.b - initial.b, 1), 0, 255),
 			}
 
 			return utils.rgb_to_hex(current), 1
@@ -32,9 +32,9 @@ return {
 			local fn = easing_functions[ease]
 
 			local current = {
-				r = fn(progress, final.r, initial.r - final.r, 1),
-				g = fn(progress, final.g, initial.g - final.g, 1),
-				b = fn(progress, final.b, initial.b - final.b, 1),
+				r = utils.clamp(fn(progress, final.r, initial.r - final.r, 1), 0, 255),
+				g = utils.clamp(fn(progress, final.g, initial.g - final.g, 1), 0, 255),
+				b = utils.clamp(fn(progress, final.b, initial.b - final.b, 1), 0, 255),
 			}
 
 			return utils.rgb_to_hex(current), 1

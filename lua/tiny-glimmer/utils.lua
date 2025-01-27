@@ -98,4 +98,8 @@ function M.set_extmark(line, ns_id, col, opts)
 	return vim.api.nvim_buf_set_extmark(0, ns_id, line, col, opts)
 end
 
+function M.clamp(value, min, max)
+	return math.min(math.max(value, min), max)
+end
+
 return M

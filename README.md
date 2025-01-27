@@ -65,6 +65,10 @@ Here's the default configuration:
 ```lua
 require('tiny-glimmer').setup({
     enabled = true,
+
+    -- Disable this if you wants to debug highlighting issues
+    disable_warnings = true,
+
     default_animation = "fade",
     refresh_interval_ms = 6,
 

@@ -157,7 +157,7 @@ end
 function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 	self.active = true
 	self.start_time = vim.loop.now()
-	self.reserved_ids = namespace_id_pool.reserve_ns_ids(self.range.end_line - self.range.start_line)
+	self.reserved_ids = namespace_id_pool.reserve_ns_ids(self.range.end_line - self.range.start_line + 1)
 
 	self.co = coroutine.create(function()
 		while self.active do

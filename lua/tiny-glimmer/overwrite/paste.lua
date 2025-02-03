@@ -37,7 +37,8 @@ local function animate_paste(opts, mode)
 		end
 	end
 
-	vim.fn.feedkeys(vim.v.count1 .. cmd, "n")
+	local keys = vim.api.nvim_replace_termcodes(vim.v.count1 .. cmd, true, true, true)
+	vim.api.nvim_feedkeys(keys, "n", false)
 	restore_paste_mode(paste_mode)
 
 	vim.schedule(function()

@@ -78,6 +78,21 @@ require('tiny-glimmer').setup({
         -- WARN: You should disable this if you have already mapped these keys
         -- 		 or if you want to use the API functions to trigger the animations
         auto_map = true,
+
+        -- For search and paste, you can easily modify the animation to suit your needs
+        -- For example you can set a table to default_animation with custom parameters:
+        -- default_animation = {
+        --     name = "fade",
+        --
+        --     settings = {
+        --         max_duration = 1000,
+        --         min_duration = 1000,
+        --
+        --         from_color = "DiffDelete",
+        --         to_color = "Normal",
+        --     },
+        -- },
+        -- settings needs to respect the animation you choose settings
         search = {
             enabled = false,
             default_animation = "pulse",

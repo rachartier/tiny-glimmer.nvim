@@ -11,15 +11,20 @@ end
 
 local function split_lines(text)
 	local lines = {}
-	for line in text:gmatch("[^\r\n]+") do
-		table.insert(lines, line)
+
+	for i = 0, vim.v.count1 - 1 do
+		for line in text:gmatch("[^\r\n]+") do
+			table.insert(lines, line)
+		end
 	end
+
 	return lines
 end
 
 local function animate_paste(opts, mode)
 	local paste_mode = get_paste_mode()
-	local text = split_lines(vim.fn.getreg('"', true))
+	local register = vim.v.register or '"'
+	local text = split_lines(vim.fn.getreg(register, true))
 
 	local cmd = mode
 
@@ -37,7 +42,8 @@ local function animate_paste(opts, mode)
 		end
 	end
 
-	local keys = vim.api.nvim_replace_termcodes(vim.v.count1 .. cmd, true, true, true)
+	local prefix = register ~= '"' and '"' .. register or ""
+	local keys = vim.api.nvim_replace_termcodes(prefix .. vim.v.count1 .. cmd, true, true, true)
 	vim.api.nvim_feedkeys(keys, "n", false)
 	restore_paste_mode(paste_mode)
 

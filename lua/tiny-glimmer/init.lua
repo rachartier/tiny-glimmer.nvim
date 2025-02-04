@@ -174,16 +174,31 @@ local function sanitize_highlights(options)
 		highlight.to_color = process_color(highlight.to_color, name, false)
 	end
 
-	for name, other in pairs(options.presets) do
-		if other.default_animation then
-			local animation = other.default_animation
-
-			if type(animation) ~= "table" then
-				return
+	for name, preset in pairs(options.presets) do
+		if preset.default_animation then
+			if type(preset.default_animation) == "string" then
+				preset.default_animation = options.animations[preset.default_animation]
 			end
 
-			animation.settings.from_color = process_color(animation.settings.from_color, name, true)
-			animation.settings.to_color = process_color(animation.settings.to_color, name, false)
+			local animation = preset.default_animation
+
+			if type(animation) == "table" then
+				animation.settings.from_color = process_color(animation.settings.from_color, name, true)
+				animation.settings.to_color = process_color(animation.settings.to_color, name, false)
+			end
+		end
+	end
+
+	for name, preset in pairs(options.overwrite) do
+		if type(preset) == "table" then
+			if preset.default_animation then
+				local animation = preset.default_animation
+
+				if type(animation) == "table" then
+					animation.settings.from_color = process_color(animation.settings.from_color, name, true)
+					animation.settings.to_color = process_color(animation.settings.to_color, name, false)
+				end
+			end
 		end
 	end
 end

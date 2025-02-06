@@ -120,6 +120,24 @@ require('tiny-glimmer').setup({
     },
 
 
+    support = {
+        -- Enable support for gbprod/substitute.nvim
+        -- You can use it like so:
+        -- require("substitute").setup({
+        --     on_substitute = require("tiny-glimmer.support.substitute").substitute_cb,
+        --     highlight_substituted_text = {
+        --         enabled = false,
+        --     },
+        --})
+        substitute = {
+            enabled = false,
+
+            -- Can also be a table. Refer to overwrite.search for more information
+            default_animation = "fade",
+        },
+    },
+
+
     -- Animations for other operations
     presets = {
         -- Enable animation on cursorline when an event in `on_events` is triggered

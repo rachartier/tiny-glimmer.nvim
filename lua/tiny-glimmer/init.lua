@@ -31,6 +31,13 @@ M.config = {
 		},
 	},
 
+	support = {
+		substitute = {
+			enabled = false,
+			default_animation = "fade",
+		},
+	},
+
 	presets = {
 		pulsar = {
 			enabled = false,
@@ -201,6 +208,19 @@ local function sanitize_highlights(options)
 			end
 		end
 	end
+
+	for name, preset in pairs(options.support) do
+		if type(preset) == "table" then
+			if preset.default_animation then
+				local animation = preset.default_animation
+
+				if type(animation) == "table" then
+					animation.settings.from_color = process_color(animation.settings.from_color, name, true)
+					animation.settings.to_color = process_color(animation.settings.to_color, name, false)
+				end
+			end
+		end
+	end
 end
 
 function M.setup(options)
@@ -215,6 +235,14 @@ function M.setup(options)
 			effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
 		else
 			effects_pool[name]:update_settings(effect_settings)
+		end
+	end
+
+	for support_name, support_settings in pairs(M.config.support) do
+		if support_settings.enabled then
+			local support = require("tiny-glimmer.support." .. support_name)
+
+			support.setup(support_settings)
 		end
 	end
 
@@ -248,7 +276,7 @@ function M.setup(options)
 	})
 
 	if M.config.overwrite.auto_map then
-        -- stylua: ignore
+        -- stylua: ignore start
         if M.config.overwrite.search.enabled then
             vim.keymap.set("n", "n", "<cmd>lua require('tiny-glimmer').search_next()<CR>",
                 { noremap = true, silent = true })
@@ -262,7 +290,7 @@ function M.setup(options)
 			vim.keymap.set("n", "p", "<cmd>lua require('tiny-glimmer').paste()<CR>", { noremap = true, silent = true })
 			vim.keymap.set("n", "P", "<cmd>lua require('tiny-glimmer').Paste()<CR>", { noremap = true, silent = true })
 		end
-		-- stylua: enable
+		-- stylua: ignore end
 	end
 
 	if M.config.overwrite.search.enabled then

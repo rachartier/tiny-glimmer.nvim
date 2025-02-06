@@ -1,7 +1,7 @@
 local M = {}
 
 local utils = require("tiny-glimmer.utils")
-local settings = {}
+local settings = nil
 
 local function split_lines(text)
 	local lines = {}

@@ -88,10 +88,14 @@ end
 function M.hijack(mode, map, original_mapping, command)
 	local execute_mapping = create_mapping_executor(map, mode, original_mapping, command)
 
-	local first_char = map:sub(1, 1)
+	if map:lower() == "<c-r>" then
+		map = "<c-r>"
+	else
+		map = map:sub(1, 1)
+	end
 
 	-- Set up the new mapping
-	vim.keymap.set(mode, first_char, execute_mapping, {
+	vim.keymap.set(mode, map, execute_mapping, {
 		noremap = true,
 		silent = true,
 	})

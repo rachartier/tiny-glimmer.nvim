@@ -29,11 +29,44 @@ M.config = {
 			paste_mapping = "p",
 			Paste_mapping = "P",
 		},
+		undo = {
+			enabled = true,
+
+			default_animation = {
+				name = "fade",
+
+				settings = {
+					from_color = "DiffDelete",
+
+					max_duration = 500,
+					min_duration = 500,
+					-- from_color = "#FF0000",
+				},
+			},
+			undo_mapping = "u",
+		},
+		redo = {
+			enabled = true,
+
+			default_animation = {
+				name = "fade",
+
+				settings = {
+					from_color = "DiffAdd",
+
+					max_duration = 500,
+					min_duration = 500,
+					-- from_color = "#00FF00",
+				},
+			},
+
+			redo_mapping = "<c-r>",
+		},
 	},
 
 	support = {
 		substitute = {
-			enabled = false,
+			enabled = true,
 			default_animation = "fade",
 		},
 	},
@@ -130,7 +163,48 @@ M.config = {
 	},
 }
 
-local function sanitize_highlights(options)
+-- Helper Functions
+local function process_highlight_color(color, highlight_name, is_from_color, options)
+	if not color or color:sub(1, 1) == "#" then
+		return color
+	end
+
+	local converted_color = utils.int_to_hex(utils.get_highlight(color).bg)
+
+	if converted_color:lower() == "none" then
+		if options.transparency_color then
+			return options.transparency_color
+		end
+
+		local is_transparent = utils.get_highlight("Normal").bg == nil or utils.get_highlight("Normal").bg == "None"
+
+		if not is_transparent then
+			local default_highlight = is_from_color and "Visual" or "Normal"
+			if not options.disable_warnings then
+				local msg = string.format(
+					"TinyGlimmer: %s_color is set to None for %s animation\nDefaulting to %s highlight",
+					is_from_color and "from" or "to",
+					highlight_name,
+					default_highlight
+				)
+				vim.notify(msg, vim.log.levels.WARN)
+			end
+			return is_from_color and hl_visual_bg or hl_normal_bg
+		end
+		return "#000000"
+	end
+
+	return converted_color
+end
+
+local function process_animation_colors(animation, name, options)
+	if type(animation) == "table" then
+		animation.settings.from_color = process_highlight_color(animation.settings.from_color, name, true, options)
+		animation.settings.to_color = process_highlight_color(animation.settings.to_color, name, false, options)
+	end
+end
+
+local function validate_transparency(options)
 	local normal_bg = utils.get_highlight("Normal").bg
 	local is_transparent = normal_bg == nil or normal_bg == "None"
 
@@ -141,86 +215,63 @@ local function sanitize_highlights(options)
 			vim.log.levels.WARN
 		)
 	end
+end
 
-	local function process_color(color, highlight_name, is_from_color)
-		if not color or color:sub(1, 1) == "#" then
-			return color
-		end
+-- Main Functions
+local function sanitize_highlights(options)
+	validate_transparency(options)
 
-		local converted_color = utils.int_to_hex(utils.get_highlight(color).bg)
-
-		if converted_color:lower() == "none" then
-			if options.transparency_color then
-				return options.transparency_color
-			end
-
-			if not is_transparent then
-				local default_highlight = is_from_color and "Visual" or "Normal"
-				if not options.disable_warnings then
-					vim.notify(
-						string.format(
-							"TinyGlimmer: %s_color is set to None for %s animation\n" .. "Defaulting to %s highlight",
-							is_from_color and "from" or "to",
-							highlight_name,
-							default_highlight
-						),
-						vim.log.levels.WARN
-					)
-				end
-				return is_from_color and hl_visual_bg or hl_normal_bg
-			else
-				return "#000000"
-			end
-		end
-
-		return converted_color
-	end
-
+	-- Process animation colors
 	for name, highlight in pairs(options.animations) do
-		highlight.from_color = process_color(highlight.from_color, name, true)
-		highlight.to_color = process_color(highlight.to_color, name, false)
+		highlight.from_color = process_highlight_color(highlight.from_color, name, true, options)
+		highlight.to_color = process_highlight_color(highlight.to_color, name, false, options)
 	end
 
+	-- Process preset colors
 	for name, preset in pairs(options.presets) do
 		if preset.default_animation then
 			if type(preset.default_animation) == "string" then
 				preset.default_animation = options.animations[preset.default_animation]
 			end
-
-			local animation = preset.default_animation
-
-			if type(animation) == "table" then
-				animation.settings.from_color = process_color(animation.settings.from_color, name, true)
-				animation.settings.to_color = process_color(animation.settings.to_color, name, false)
-			end
+			process_animation_colors(preset.default_animation, name, options)
 		end
 	end
 
-	for name, preset in pairs(options.overwrite) do
-		if type(preset) == "table" then
-			if preset.default_animation then
-				local animation = preset.default_animation
-
-				if type(animation) == "table" then
-					animation.settings.from_color = process_color(animation.settings.from_color, name, true)
-					animation.settings.to_color = process_color(animation.settings.to_color, name, false)
-				end
+	-- Process overwrite and support colors
+	for _, category in ipairs({ options.overwrite, options.support }) do
+		for name, preset in pairs(category) do
+			if type(preset) == "table" and preset.default_animation then
+				process_animation_colors(preset.default_animation, name, options)
 			end
 		end
 	end
+end
 
-	for name, preset in pairs(options.support) do
-		if type(preset) == "table" then
-			if preset.default_animation then
-				local animation = preset.default_animation
+function M.custom_remap(map, mode, callback)
+	local lhs = map
+	local rhs = map
 
-				if type(animation) == "table" then
-					animation.settings.from_color = process_color(animation.settings.from_color, name, true)
-					animation.settings.to_color = process_color(animation.settings.to_color, name, false)
-				end
-			end
+	-- FIXME: This is a hacky way to handle <c-r> remaps
+	if #map > 1 then
+		if map:lower() ~= "<c-r>" then
+			lhs = map:sub(1, 1)
+			rhs = map:sub(2)
 		end
 	end
+
+	local original_mapping = vim.fn.maparg(lhs, mode, false, true)
+
+	if original_mapping and vim.tbl_isempty(original_mapping) then
+		original_mapping = {
+			lhs = lhs,
+			mode = mode,
+			rhs = rhs,
+			noremap = true,
+			silent = true,
+		}
+	end
+
+	require("tiny-glimmer.hijack").hijack(rhs, original_mapping, callback)
 end
 
 function M.setup(options)
@@ -275,23 +326,29 @@ function M.setup(options)
 		end,
 	})
 
+    -- stylua: ignore start
 	if M.config.overwrite.auto_map then
-        -- stylua: ignore start
-        if M.config.overwrite.search.enabled then
-            vim.keymap.set("n", "n", "<cmd>lua require('tiny-glimmer').search_next()<CR>",
-                { noremap = true, silent = true })
-            vim.keymap.set("n", "N", "<cmd>lua require('tiny-glimmer').search_prev()<CR>",
-                { noremap = true, silent = true })
-            vim.keymap.set("n", "*", "<cmd>lua require('tiny-glimmer').search_under_cursor()<CR>",
-                { noremap = true, silent = true })
+        local search_config = M.config.overwrite.search
+        if search_config.enabled then
+            M.custom_remap(search_config.next_mapping, "n", function() require("tiny-glimmer").search_next() end)
+            M.custom_remap(search_config.prev_mapping, "n", function() require("tiny-glimmer").search_prev() end)
+            M.custom_remap("*","n", function() require("tiny-glimmer").search_under_cursor() end)
         end
 
-		if M.config.overwrite.paste.enabled then
-			vim.keymap.set("n", "p", "<cmd>lua require('tiny-glimmer').paste()<CR>", { noremap = true, silent = true })
-			vim.keymap.set("n", "P", "<cmd>lua require('tiny-glimmer').Paste()<CR>", { noremap = true, silent = true })
+        local paste_config = M.config.overwrite.paste
+		if paste_config.enabled then
+            M.custom_remap(paste_config.paste_mapping, "n", function() require("tiny-glimmer").paste() end)
+            M.custom_remap(paste_config.Paste_mapping, "n", function() require("tiny-glimmer").Paste() end)
 		end
-		-- stylua: ignore end
+
+        local undo_config = M.config.overwrite.undo
+        local redo_config = M.config.overwrite.redo
+        if undo_config.enabled then
+            M.custom_remap(undo_config.undo_mapping, "n", function() require("tiny-glimmer").undo() end)
+            M.custom_remap(redo_config.redo_mapping, "n", function() require("tiny-glimmer").redo() end)
+        end
 	end
+	-- stylua: ignore end
 
 	if M.config.overwrite.search.enabled then
 		vim.api.nvim_create_autocmd("CmdlineLeave", {
@@ -459,6 +516,26 @@ M.Paste = function()
 	end
 
 	overwrite.paste.Paste(M.config.overwrite.paste)
+end
+
+M.undo = function()
+	if not M.config.overwrite.undo.enabled then
+		vim.notify(
+			'TinyGlimmer: Undo is not enabled in your configuration.\nYou should not use require("tiny-glimmer").undo().',
+			vim.log.levels.WARN
+		)
+	end
+	overwrite.undo.undo(M.config.overwrite.undo)
+end
+
+M.redo = function()
+	if not M.config.overwrite.undo.enabled then
+		vim.notify(
+			'TinyGlimmer: Undo is not enabled in your configuration.\nYou should not use require("tiny-glimmer").redo().',
+			vim.log.levels.WARN
+		)
+	end
+	overwrite.undo.redo(M.config.overwrite.redo)
 end
 
 M.search_under_cursor = function()

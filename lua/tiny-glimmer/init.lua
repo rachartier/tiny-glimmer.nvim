@@ -249,29 +249,18 @@ end
 
 function M.custom_remap(map, mode, callback)
 	local lhs = map
-	local rhs = map
+	local rhs = nil
 
-	-- FIXME: This is a hacky way to handle <c-r> remaps
-	if #map > 1 then
-		if map:lower() ~= "<c-r>" then
-			lhs = map:sub(1, 1)
-			rhs = map:sub(2)
-		end
-	end
+	-- -- FIXME: This is a hacky way to handle <c-r> remaps
+	-- if #map > 1 then
+	-- 	if map:lower() ~= "<c-r>" then
+	-- 		lhs = map:sub(1, 1)
+	-- 		rhs = map:sub(2)
+	-- 	end
+	-- end
 
 	local original_mapping = vim.fn.maparg(lhs, mode, false, true)
-
-	if original_mapping and vim.tbl_isempty(original_mapping) then
-		original_mapping = {
-			lhs = lhs,
-			mode = mode,
-			rhs = rhs,
-			noremap = true,
-			silent = true,
-		}
-	end
-
-	require("tiny-glimmer.hijack").hijack(rhs, original_mapping, callback)
+	require("tiny-glimmer.hijack").hijack(mode, map, original_mapping, callback)
 end
 
 function M.setup(options)

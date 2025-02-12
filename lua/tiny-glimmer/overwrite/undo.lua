@@ -80,8 +80,6 @@ local function handle_text_change_animation(opts)
 	vim.defer_fn(function()
 		detach_listener = true
 
-		vim.print("range", range)
-
 		require("tiny-glimmer.animation.factory")
 			.get_instance()
 			:create_named_text_animation("test", opts.default_animation, {

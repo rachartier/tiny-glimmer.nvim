@@ -6,6 +6,7 @@
 ---@field effect_pool table {string: table}
 ---@field animation_refresh number The refresh rate of the animation (in ms)
 ---@field instance AnimationFactory
+---@field buffers table {number: {animations: table, named_animations: table}}
 
 ---@class AnimationType
 ---@field name string
@@ -68,7 +69,7 @@ function AnimationFactory:_prepare_animation_effect(buffer, animation_type, opts
 		error("TinyGlimmer: Range is required in options")
 	end
 
-	self.buffers[buffer] = self.buffers[buffer] or { animations = {} }
+	self.buffers[buffer] = self.buffers[buffer] or { animations = {}, named_animations = {} }
 
 	local animation_name = type(animation_type) == "table" and animation_type.name or animation_type
 
@@ -103,6 +104,26 @@ function AnimationFactory:_manage_animation(animation_obj, buffer)
 	end)
 end
 
+--- Manage animation lifecycle in a buffer
+--- @param animation_obj table Animation object
+--- @param buffer number Neovim buffer handle
+function AnimationFactory:_manage_named_animation(name, animation_obj, buffer)
+	if not animation_obj then
+		error("TinyGlimmer: Failed to create animation")
+	end
+
+	-- Stop any existing animation on this line
+	if self.buffers[buffer].named_animations[name] then
+		self.buffers[buffer].named_animations[name]:stop()
+	end
+
+	-- Start new animation
+	self.buffers[buffer].named_animations[name] = animation_obj
+	animation_obj:start(self.animation_refresh, function()
+		self.buffers[buffer].named_animations[name] = nil
+	end)
+end
+
 --- Create and launch a text animation
 --- @param animation_type string|AnimationType Animation type
 --- @param opts CreateAnimationOpts Animation options
@@ -111,6 +132,17 @@ function AnimationFactory:create_text_animation(animation_type, opts)
 	local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
 	local animation = require("tiny-glimmer.animation.premade.text").new(effect, opts)
 	self:_manage_animation(animation, buffer)
+end
+
+--- Create and launch a named text animation
+--- @param name string Animation name
+--- @param animation_type string|AnimationType Animation type
+--- @param opts CreateAnimationOpts Animation options
+function AnimationFactory:create_named_text_animation(name, animation_type, opts)
+	local buffer = vim.api.nvim_get_current_buf()
+	local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
+	local animation = require("tiny-glimmer.animation.premade.text").new(effect, opts)
+	self:_manage_named_animation(name, animation, buffer)
 end
 
 --- Create and launch a line animation

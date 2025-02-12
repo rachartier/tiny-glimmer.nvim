@@ -20,7 +20,6 @@ TextAnimation.__index = TextAnimation
 
 local utils = require("tiny-glimmer.utils")
 local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
-local namespace_id_pool = require("tiny-glimmer.namespace_id_pool")
 local AnimationEffect = require("tiny-glimmer.glimmer_animation")
 
 ---Creates a new TextAnimation instance
@@ -64,7 +63,16 @@ function TextAnimation.new(effect, opts)
 	end
 	self.animation = AnimationEffect.new(effect, animation_opts)
 
+	self.viewport = {
+		start_line = vim.fn.line("w0") - 1,
+		end_line = vim.fn.line("w$"),
+	}
+
 	return self
+end
+
+local function is_in_viewport(self, line)
+	return line >= self.viewport.start_line and line <= self.viewport.end_line
 end
 
 ---Computes line configurations for the animation
@@ -75,7 +83,7 @@ local function compute_lines_range(self, animation_progress)
 	local lines = {}
 	local start_position = self.animation.range.start_col
 
-	if self.content ~= nil then
+	if self.content and not vim.tbl_isempty(self.content) then
 		for i, line_content in ipairs(self.content) do
 			local line_length = #line_content
 			local count = 0
@@ -96,11 +104,26 @@ local function compute_lines_range(self, animation_progress)
 				-- the extmark is not correctly placed, offset is wrong
 			end
 
-			table.insert(lines, {
-				line_number = i - 1,
-				start_position = (i == 1 or self.event.is_visual_block) and start_position or 0,
-				count = count,
-			})
+			local line_number = self.animation.range.start_line + i - 1
+			if is_in_viewport(self, line_number) then
+				table.insert(lines, {
+					line_number = line_number,
+					start_position = (i == 1 or self.event.is_visual_block) and start_position or 0,
+					count = count,
+				})
+			end
+		end
+	else
+		for i = self.animation.range.start_line, self.animation.range.end_line do
+			if is_in_viewport(self, i) then
+				table.insert(lines, {
+					line_number = i,
+					start_position = self.animation.range.start_col,
+					count = math.floor(
+						(self.animation.range.end_col - self.animation.range.start_col) * animation_progress
+					),
+				})
+			end
 		end
 	end
 	return lines
@@ -110,7 +133,7 @@ end
 ---@param self TextAnimation Animation instance
 ---@param line table Line configuration
 local function apply_hl(self, line)
-	local line_index = line.line_number + self.animation.range.start_line
+	local line_index = line.line_number
 
 	local hl_group = self.animation:get_hl_group()
 	if self.cursor_line_enabled then
@@ -135,7 +158,13 @@ end
 ---@param refresh_interval_ms number Refresh interval in milliseconds
 ---@param on_complete function Callback function when animation is complete
 function TextAnimation:start(refresh_interval_ms, on_complete)
-	self.animation:start(refresh_interval_ms, #self.content[1], {
+	local length = self.animation.range.end_col - self.animation.range.start_col
+
+	if self.content and not vim.tbl_isempty(self.content) then
+		length = #self.content[1]
+	end
+
+	self.animation:start(refresh_interval_ms, length, {
 		on_update = function(update_progress)
 			vim.api.nvim_buf_clear_namespace(
 				0,

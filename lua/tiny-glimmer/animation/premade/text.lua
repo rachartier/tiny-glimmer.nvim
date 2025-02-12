@@ -18,6 +18,8 @@
 local TextAnimation = {}
 TextAnimation.__index = TextAnimation
 
+local MAX_END_COL = 99999
+
 local utils = require("tiny-glimmer.utils")
 local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
 local AnimationEffect = require("tiny-glimmer.glimmer_animation")
@@ -78,13 +80,33 @@ local function compute_lines_range(self, animation_progress)
 
 	for i = self.animation.range.start_line, self.animation.range.end_line do
 		if is_in_viewport(self, i) then
+			local count = MAX_END_COL
+			local start_position = self.animation.range.start_col
+
+			if self.event.is_visual_block then
+				start_position = self.animation.range.start_col
+				count = self.animation.range.end_col - self.animation.range.start_col
+			else
+				if i == self.animation.range.start_line then
+					start_position = self.animation.range.start_col
+					count = self.animation.range.end_col - self.animation.range.start_col
+				elseif i > self.animation.range.start_line and i < self.animation.range.end_line then
+					start_position = 0
+					count = MAX_END_COL
+				else
+					start_position = 0
+					count = self.animation.range.end_col
+				end
+			end
+
 			table.insert(lines, {
 				line_number = i,
-				start_position = self.animation.range.start_col,
-				count = math.ceil((self.animation.range.end_col - self.animation.range.start_col) * animation_progress),
+				start_position = start_position,
+				count = count,
 			})
 		end
 	end
+
 	return lines
 end
 

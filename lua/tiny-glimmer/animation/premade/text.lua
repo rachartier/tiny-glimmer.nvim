@@ -33,12 +33,6 @@ function TextAnimation.new(effect, opts)
 		error("opts.base is required")
 	end
 
-	if type(opts.content) == "string" then
-		self.content = { opts.content }
-	else
-		self.content = opts.content
-	end
-
 	self.virtual_text_priority = opts.virtual_text_priority or 128
 
 	self.event_type = vim.v.event.regtype
@@ -81,49 +75,14 @@ end
 ---@return table[] Line configurations
 local function compute_lines_range(self, animation_progress)
 	local lines = {}
-	local start_position = self.animation.range.start_col
 
-	if self.content and not vim.tbl_isempty(self.content) then
-		for i, line_content in ipairs(self.content) do
-			local line_length = #line_content
-			local count = 0
-
-			if self.event.is_paste then
-				if i == #self.content then
-					count = line_length
-				else
-					count = 9999
-				end
-			else
-				count = math.floor(line_length * animation_progress)
-			end
-
-			if self.event.is_visual_block then
-				-- FIXME: When there is tabs in the line
-				-- and multiple lines
-				-- the extmark is not correctly placed, offset is wrong
-			end
-
-			local line_number = self.animation.range.start_line + i - 1
-			if is_in_viewport(self, line_number) then
-				table.insert(lines, {
-					line_number = line_number,
-					start_position = (i == 1 or self.event.is_visual_block) and start_position or 0,
-					count = count,
-				})
-			end
-		end
-	else
-		for i = self.animation.range.start_line, self.animation.range.end_line do
-			if is_in_viewport(self, i) then
-				table.insert(lines, {
-					line_number = i,
-					start_position = self.animation.range.start_col,
-					count = math.floor(
-						(self.animation.range.end_col - self.animation.range.start_col) * animation_progress
-					),
-				})
-			end
+	for i = self.animation.range.start_line, self.animation.range.end_line do
+		if is_in_viewport(self, i) then
+			table.insert(lines, {
+				line_number = i,
+				start_position = self.animation.range.start_col,
+				count = math.ceil((self.animation.range.end_col - self.animation.range.start_col) * animation_progress),
+			})
 		end
 	end
 	return lines
@@ -159,10 +118,6 @@ end
 ---@param on_complete function Callback function when animation is complete
 function TextAnimation:start(refresh_interval_ms, on_complete)
 	local length = self.animation.range.end_col - self.animation.range.start_col
-
-	if self.content and not vim.tbl_isempty(self.content) then
-		length = #self.content[1]
-	end
 
 	self.animation:start(refresh_interval_ms, length, {
 		on_update = function(update_progress)

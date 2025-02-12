@@ -26,7 +26,6 @@ local function search(opts, keys, search_pattern)
 			base = {
 				range = range,
 			},
-			content = matches[1].text,
 		})
 	end)
 end

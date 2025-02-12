@@ -3,18 +3,6 @@ local M = {}
 local utils = require("tiny-glimmer.utils")
 local settings = nil
 
-local function split_lines(text)
-	local lines = {}
-
-	for i = 0, vim.v.count1 - 1 do
-		for line in text:gmatch("[^\r\n]+") do
-			table.insert(lines, line)
-		end
-	end
-
-	return lines
-end
-
 function M.setup(opts)
 	settings = opts
 end
@@ -24,9 +12,6 @@ function M.substitute_cb(param)
 		return
 	end
 
-	local register = param.register
-	local text = split_lines(vim.fn.getreg(register, true))
-
 	vim.schedule(function()
 		local range = utils.get_range_yank()
 
@@ -35,7 +20,6 @@ function M.substitute_cb(param)
 				range = range,
 			},
 			is_paste = true,
-			content = text,
 		})
 	end)
 end

@@ -5,6 +5,15 @@ local M = {}
 local function handle_text_change_animation(opts)
 	local detach_listener = false
 
+	local range = {
+		start_line = 0,
+		start_col = 0,
+		end_line = 0,
+		end_col = 0,
+	}
+
+	local iter = 0
+
 	---Callback function for buffer changes
 	---@param event any Event type
 	---@param bufnr number Buffer number
@@ -47,30 +56,38 @@ local function handle_text_change_animation(opts)
 			end_col = #last_line
 		end
 
-		vim.schedule(function()
-			local range = {
-				start_line = start_row,
-				start_col = start_col,
-				end_line = end_row,
-				end_col = end_col,
-			}
+		if iter == 0 then
+			range.start_line = start_row
+			range.start_col = start_col
+			range.end_line = end_row
+			range.end_col = end_col
+		else
+			range.start_line = math.min(start_row, range.start_line)
+			range.start_col = math.min(start_col, range.start_col)
 
-			local changed_text = vim.api.nvim_buf_get_lines(0, start_row, end_row, false)
+			range.end_line = math.max(end_row, range.end_line)
+			range.end_col = math.max(end_col, range.end_col)
+		end
 
-			require("tiny-glimmer.animation.factory").get_instance():create_text_animation(opts.default_animation, {
-				base = { range = range },
-				is_paste = true,
-				content = changed_text,
-			})
-
-			detach_listener = true
-		end)
+		iter = iter + 1
 	end
 
 	-- Attach buffer listener
 	vim.api.nvim_buf_attach(0, false, {
 		on_bytes = M.on_bytes,
 	})
+
+	vim.defer_fn(function()
+		detach_listener = true
+
+		vim.print("range", range)
+
+		require("tiny-glimmer.animation.factory")
+			.get_instance()
+			:create_named_text_animation("test", opts.default_animation, {
+				base = { range = range },
+			})
+	end, 50)
 end
 
 ---Animate undo operation

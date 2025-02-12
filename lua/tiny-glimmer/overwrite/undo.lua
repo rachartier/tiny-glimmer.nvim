@@ -4,14 +4,7 @@ local M = {}
 ---@return nil
 local function handle_text_change_animation(opts)
 	local detach_listener = false
-
-	local range = {
-		start_line = 0,
-		start_col = 0,
-		end_line = 0,
-		end_col = 0,
-	}
-
+	local ranges = {}
 	local iter = 0
 
 	---Callback function for buffer changes
@@ -56,18 +49,14 @@ local function handle_text_change_animation(opts)
 			end_col = #last_line
 		end
 
-		if iter == 0 then
-			range.start_line = start_row
-			range.start_col = start_col
-			range.end_line = end_row
-			range.end_col = end_col
-		else
-			range.start_line = math.min(start_row, range.start_line)
-			range.start_col = math.min(start_col, range.start_col)
+		local range = {
+			start_line = start_row,
+			start_col = start_col,
+			end_line = end_row,
+			end_col = end_col,
+		}
 
-			range.end_line = math.max(end_row, range.end_line)
-			range.end_col = math.max(end_col, range.end_col)
-		end
+		table.insert(ranges, range)
 
 		iter = iter + 1
 	end
@@ -77,15 +66,71 @@ local function handle_text_change_animation(opts)
 		on_bytes = M.on_bytes,
 	})
 
-	vim.defer_fn(function()
+	vim.schedule(function()
 		detach_listener = true
 
-		require("tiny-glimmer.animation.factory")
-			.get_instance()
-			:create_named_text_animation("test", opts.default_animation, {
-				base = { range = range },
-			})
-	end, 50)
+		local final_ranges = {}
+
+		table.sort(ranges, function(a, b)
+			return a.start_line < b.start_line
+		end)
+
+		for i = 1, #ranges do
+			local range = ranges[i]
+
+			if range == nil then
+				goto continue
+			end
+
+			for j = i + 1, #ranges do
+				local other_range = ranges[j]
+
+				if other_range == nil then
+					goto continue
+				end
+
+				if
+					range.start_line <= other_range.end_line
+					and range.end_line >= other_range.start_line
+					and range.start_col <= other_range.end_col
+					and range.end_col >= other_range.start_col
+				then
+					range.start_line = math.min(range.start_line, other_range.start_line)
+					range.start_col = math.min(range.start_col, other_range.start_col)
+					range.end_line = math.max(range.end_line, other_range.end_line)
+					range.end_col = math.max(range.end_col, other_range.end_col)
+
+					ranges[j] = nil
+					goto continue
+				end
+
+				::continue::
+			end
+
+			if range.start_line == range.end_line then
+				if range.start_col == range.end_col then
+					goto continue
+				end
+			end
+
+			table.insert(final_ranges, range)
+			::continue::
+		end
+
+		vim.schedule(function()
+			for i = 1, #final_ranges do
+				local range = final_ranges[i]
+
+				if final_ranges[i] ~= nil then
+					require("tiny-glimmer.animation.factory")
+						.get_instance()
+						:create_named_text_animation("undo_" .. i, opts.default_animation, {
+							base = { range = range },
+						})
+				end
+			end
+		end)
+	end)
 end
 
 ---Animate undo operation

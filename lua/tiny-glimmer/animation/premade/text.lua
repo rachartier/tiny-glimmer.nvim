@@ -10,10 +10,10 @@
 ---@field animation GlimmerAnimation Animation effect instance
 
 ---@class Event
----@field is_visual boolean
----@field is_line boolean
----@field is_visual_block boolean
----@field is_paste boolean
+---@field is_visual boolean Whether the event is a visual selection
+---@field is_line boolean Whether the event is a line-wise operation
+---@field is_visual_block boolean Whether the event is a block-wise visual operation
+---@field is_paste boolean Whether the event is a paste operation
 
 local TextAnimation = {}
 TextAnimation.__index = TextAnimation
@@ -29,26 +29,25 @@ local AnimationEffect = require("tiny-glimmer.glimmer_animation")
 ---@param opts table Configuration options
 ---@return TextAnimation The created TextAnimation instance
 function TextAnimation.new(effect, opts)
-	local self = setmetatable({}, TextAnimation)
-
 	if not opts.base then
 		error("opts.base is required")
 	end
 
-	self.virtual_text_priority = opts.virtual_text_priority or 128
+	local self = setmetatable({}, TextAnimation)
 
+	self.virtual_text_priority = opts.virtual_text_priority or 128
 	self.event_type = vim.v.event.regtype
+	self.operation = vim.v.event.operator
+
 	self.event = {
 		is_visual = self.event_type == "v",
 		is_line = string.byte(self.event_type or "") == 86,
 		is_visual_block = string.byte(self.event_type or "") == 22,
 		is_paste = opts.is_paste,
 	}
-	self.operation = vim.v.event.operator
 
 	local cursor_line_hl = utils.get_highlight("CursorLine").bg
 	local animation_opts = opts.base
-
 	self.cursor_line_enabled = false
 
 	if cursor_line_hl ~= nil and cursor_line_hl ~= "None" then
@@ -57,6 +56,7 @@ function TextAnimation.new(effect, opts)
 			overwrite_to_color = utils.int_to_hex(cursor_line_hl),
 		})
 	end
+
 	self.animation = AnimationEffect.new(effect, animation_opts)
 
 	self.viewport = {
@@ -67,6 +67,10 @@ function TextAnimation.new(effect, opts)
 	return self
 end
 
+---Checks if a line is within the current viewport
+---@param self TextAnimation Animation instance
+---@param line number Line number to check
+---@return boolean Whether the line is visible
 local function is_in_viewport(self, line)
 	return line >= self.viewport.start_line and line <= self.viewport.end_line
 end
@@ -78,6 +82,8 @@ end
 local function compute_lines_range(self, animation_progress)
 	local lines = {}
 
+	local more_than_one_line = self.animation.range.start_line ~= self.animation.range.end_line
+
 	for i = self.animation.range.start_line, self.animation.range.end_line do
 		if is_in_viewport(self, i) then
 			local count = MAX_END_COL
@@ -88,12 +94,18 @@ local function compute_lines_range(self, animation_progress)
 				count = self.animation.range.end_col - self.animation.range.start_col
 			else
 				if i == self.animation.range.start_line then
+					-- First line
 					start_position = self.animation.range.start_col
 					count = self.animation.range.end_col - self.animation.range.start_col
+					if count == 0 or more_than_one_line then
+						count = MAX_END_COL
+					end
 				elseif i > self.animation.range.start_line and i < self.animation.range.end_line then
+					-- Middle lines
 					start_position = 0
 					count = MAX_END_COL
 				else
+					-- Last line
 					start_position = 0
 					count = self.animation.range.end_col
 				end
@@ -115,11 +127,10 @@ end
 ---@param line table Line configuration
 local function apply_hl(self, line)
 	local line_index = line.line_number
-
 	local hl_group = self.animation:get_hl_group()
+
 	if self.cursor_line_enabled then
 		local cursor_position = vim.api.nvim_win_get_cursor(0)
-
 		if cursor_position[1] - 1 == line_index then
 			hl_group = self.animation:get_overwrite_hl_group()
 		end
@@ -143,6 +154,7 @@ function TextAnimation:start(refresh_interval_ms, on_complete)
 
 	self.animation:start(refresh_interval_ms, length, {
 		on_update = function(update_progress)
+			-- Clear previous animation state
 			vim.api.nvim_buf_clear_namespace(
 				0,
 				namespace,
@@ -150,19 +162,17 @@ function TextAnimation:start(refresh_interval_ms, on_complete)
 				self.animation.range.end_line + 1
 			)
 
+			-- Apply new animation state
 			local lines_range = compute_lines_range(self, update_progress)
 			for _, line_range in ipairs(lines_range) do
 				apply_hl(self, line_range)
 			end
 		end,
-		on_complete = function()
-			if on_complete then
-				on_complete()
-			end
-		end,
+		on_complete = on_complete,
 	})
 end
 
+---Stops the text animation
 function TextAnimation:stop()
 	self.animation:stop()
 end

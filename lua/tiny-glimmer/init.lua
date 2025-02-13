@@ -40,7 +40,6 @@ M.config = {
 
 					max_duration = 500,
 					min_duration = 500,
-					-- from_color = "#FF0000",
 				},
 			},
 			undo_mapping = "u",
@@ -56,7 +55,6 @@ M.config = {
 
 					max_duration = 500,
 					min_duration = 500,
-					-- from_color = "#00FF00",
 				},
 			},
 

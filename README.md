@@ -98,24 +98,51 @@ require('tiny-glimmer').setup({
             default_animation = "pulse",
 
             -- Keys to navigate to the next match
-            -- Can also be a function that returns a string
             next_mapping = "nzzzv",
 
             -- Keys to navigate to the previous match
-            -- Can also be a function that returns a string
             prev_mapping = "Nzzzv",
         },
         paste = {
-            enabled = true,
+            enabled = false,
             default_animation = "reverse_fade",
 
             -- Keys to paste
-            -- Can also be a function that returns a string
             paste_mapping = "p",
 
             -- Keys to paste above the cursor
-            -- Can also be a function that returns a string
             Paste_mapping = "P",
+        },
+        undo = {
+            enabled = false,
+
+            default_animation = {
+                name = "fade",
+
+                settings = {
+                  from_color = "DiffDelete",
+
+                  max_duration = 500,
+                  min_duration = 500,
+                },
+            },
+            undo_mapping = "u",
+        },
+        redo = {
+            enabled = false,
+
+            default_animation = {
+                name = "fade",
+
+                settings = {
+                    from_color = "DiffAdd",
+
+                    max_duration = 500,
+                    min_duration = 500,
+                },
+            },
+
+            redo_mapping = "<c-r>",
         },
     },
 

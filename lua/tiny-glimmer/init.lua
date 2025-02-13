@@ -30,7 +30,7 @@ M.config = {
 			Paste_mapping = "P",
 		},
 		undo = {
-			enabled = true,
+			enabled = false,
 
 			default_animation = {
 				name = "fade",
@@ -45,7 +45,7 @@ M.config = {
 			undo_mapping = "u",
 		},
 		redo = {
-			enabled = true,
+			enabled = false,
 
 			default_animation = {
 				name = "fade",
@@ -64,7 +64,7 @@ M.config = {
 
 	support = {
 		substitute = {
-			enabled = true,
+			enabled = false,
 			default_animation = "fade",
 		},
 	},

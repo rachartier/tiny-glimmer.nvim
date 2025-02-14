@@ -60,10 +60,6 @@ local function create_mapping_executor(lhs, rhs, mode, original_mapping, command
 			local mapping_mode = original_mapping.mode
 			local new_rhs = original_mapping.rhs
 
-			for _ = 1, vim.v.count1 do
-				original_mapping.callback()
-			end
-
 			if original_mapping.callback then
 				execute_callback_mapping(
 					original_mapping.callback,

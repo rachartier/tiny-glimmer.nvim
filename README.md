@@ -95,6 +95,18 @@ require('tiny-glimmer').setup({
         --     },
         -- },
         -- settings needs to respect the animation you choose settings
+        --
+        -- All "mapping" can be set in 2 ways:
+        -- 1. A string with the key you want to map
+        -- 		  Example:
+        -- 			paste_mapping = "p"
+        -- 2. A table with the key you want to map and its actions
+        -- 		  Example:
+        -- 			paste_mapping = {
+        -- 				lhs = "p"
+        -- 				rhs = "<Plug>(YankyPutAfter)"
+        --      }
+        "gg" }
         search = {
             enabled = false,
             default_animation = "pulse",

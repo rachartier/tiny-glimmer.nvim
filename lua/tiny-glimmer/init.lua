@@ -26,14 +26,8 @@ M.config = {
 			enabled = true,
 			default_animation = "reverse_fade",
 
-			paste_mapping = {
-				lhs = "p",
-				rhs = "<Plug>(YankyPutBefore)",
-			},
-			Paste_mapping = {
-				lhs = "P",
-				rhs = "<Plug>(YankyPutBefore)",
-			},
+			paste_mapping = "p",
+			Paste_mapping = "P",
 		},
 		undo = {
 			enabled = false,

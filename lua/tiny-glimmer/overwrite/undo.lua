@@ -71,50 +71,42 @@ local function handle_text_change_animation(opts)
 
 		local final_ranges = {}
 
+		-- Sort ranges by start line and then by start column
 		table.sort(ranges, function(a, b)
+			if a.start_line == b.start_line then
+				return a.start_col < b.start_col
+			end
 			return a.start_line < b.start_line
 		end)
 
-		for i = 1, #ranges do
-			local range = ranges[i]
+		if #ranges > 0 then
+			local current = ranges[1]
 
-			if range == nil then
-				goto continue
-			end
+			for i = 2, #ranges do
+				local next_range = ranges[i]
 
-			for j = i + 1, #ranges do
-				local other_range = ranges[j]
-
-				if other_range == nil then
-					goto continue
-				end
-
+				-- Check if ranges overlap or are adjacent
 				if
-					range.start_line <= other_range.end_line
-					and range.end_line >= other_range.start_line
-					and range.start_col <= other_range.end_col
-					and range.end_col >= other_range.start_col
+					current.end_line < next_range.start_line
+					or (current.end_line == next_range.start_line and current.end_col < next_range.start_col)
 				then
-					range.start_line = math.min(range.start_line, other_range.start_line)
-					range.start_col = math.min(range.start_col, other_range.start_col)
-					range.end_line = math.max(range.end_line, other_range.end_line)
-					range.end_col = math.max(range.end_col, other_range.end_col)
-
-					ranges[j] = nil
-					goto continue
-				end
-
-				::continue::
-			end
-
-			if range.start_line == range.end_line then
-				if range.start_col == range.end_col then
-					goto continue
+					-- No overlap, add current range and start new one
+					if current.start_line ~= current.end_line or current.start_col ~= current.end_col then
+						table.insert(final_ranges, current)
+					end
+					current = next_range
+				else
+					-- Merge overlapping ranges
+					current.end_line = math.max(current.end_line, next_range.end_line)
+					if current.end_line == next_range.end_line then
+						current.end_col = math.max(current.end_col, next_range.end_col)
+					end
 				end
 			end
 
-			table.insert(final_ranges, range)
-			::continue::
+			if current.start_line ~= current.end_line or current.start_col ~= current.end_col then
+				table.insert(final_ranges, current)
+			end
 		end
 
 		vim.schedule(function()

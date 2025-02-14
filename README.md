@@ -106,7 +106,6 @@ require('tiny-glimmer').setup({
         -- 				lhs = "p"
         -- 				rhs = "<Plug>(YankyPutAfter)"
         --      }
-        "gg" }
         search = {
             enabled = false,
             default_animation = "pulse",

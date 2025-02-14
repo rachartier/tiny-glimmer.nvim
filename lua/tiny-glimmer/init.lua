@@ -327,6 +327,7 @@ function M.setup(options)
             M.custom_remap(search_config.next_mapping, "n", function() require("tiny-glimmer").search_next() end)
             M.custom_remap(search_config.prev_mapping, "n", function() require("tiny-glimmer").search_prev() end)
             M.custom_remap("*", "n", function() require("tiny-glimmer").search_under_cursor() end)
+            M.custom_remap("#", "n", function() require("tiny-glimmer").search_under_cursor() end)
 
             if vim.opt.hlsearch then
                 local normal_hl = utils.get_highlight("Normal")

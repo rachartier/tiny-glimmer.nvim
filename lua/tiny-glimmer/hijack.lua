@@ -31,32 +31,38 @@ end
 
 ---Executes the original callback mapping
 ---@param callback function The callback to execute
----@param key_combination string The key combination
+---@param lhs string The left-hand side mapping
+---@param rhs string The right-hand side mapping
 ---@param mapping_mode string The mapping mode
----@param original_mapping table The original mapping details
----@param new_rhs string|nil The new right-hand side mapping
+---@param original_mapping table|string The original mapping details
 ---@param command string|function|nil Additional command to execute
-local function execute_callback_mapping(callback, key_combination, mapping_mode, original_mapping, command)
+local function execute_callback_mapping(callback, lhs, rhs, mapping_mode, original_mapping, command)
 	execute_with_count(callback)
 
 	-- Check if mapping changed and rehijack if necessary
-	local current_mapping = vim.fn.maparg(key_combination, mapping_mode, false, true)
+	local current_mapping = vim.fn.maparg(lhs, mapping_mode, false, true)
 	if not vim.deep_equal(current_mapping, original_mapping.callback) then
-		M.hijack(mapping_mode, key_combination, original_mapping, command)
+		M.hijack(mapping_mode, lhs, rhs, original_mapping, command)
 	end
 end
 
 ---Creates the mapping execution function
+---@param lhs string The left-hand side mapping
+---@param rhs string The right-hand side mapping
+---@param mode string The mode of the mapping
 ---@param original_mapping table The original mapping details
----@param command string|function|nil Additional command to execute
 ---@return function The mapping execution function
-local function create_mapping_executor(map, mode, original_mapping, command)
+local function create_mapping_executor(lhs, rhs, mode, original_mapping, command)
 	return function()
 		-- Handle original mapping
 		if original_mapping and not vim.tbl_isempty(original_mapping) then
 			local key_combination = original_mapping.lhs
 			local mapping_mode = original_mapping.mode
 			local new_rhs = original_mapping.rhs
+
+			for _ = 1, vim.v.count1 do
+				original_mapping.callback()
+			end
 
 			if original_mapping.callback then
 				execute_callback_mapping(
@@ -69,8 +75,10 @@ local function create_mapping_executor(map, mode, original_mapping, command)
 			elseif original_mapping.rhs then
 				vim.api.nvim_feedkeys(add_count_and_registers(original_mapping.rhs), original_mapping.mode, false)
 			end
-		elseif map and type(map) == "string" then
-			vim.api.nvim_feedkeys(add_count_and_registers(map), mode, false)
+		elseif rhs then
+			vim.api.nvim_feedkeys(add_count_and_registers(rhs), mode, false)
+		elseif lhs then
+			vim.api.nvim_feedkeys(add_count_and_registers(lhs), mode, false)
 		end
 
 		-- Execute additional command if provided
@@ -85,17 +93,11 @@ end
 ---@param map string The key mapping to hijack
 ---@param original_mapping table The original mapping details
 ---@param command string|function|nil Additional command to execute
-function M.hijack(mode, map, original_mapping, command)
-	local execute_mapping = create_mapping_executor(map, mode, original_mapping, command)
-
-	if map:lower() == "<c-r>" then
-		map = "<c-r>"
-	else
-		map = map:sub(1, 1)
-	end
+function M.hijack(mode, lhs, rhs, original_mapping, command)
+	local execute_mapping = create_mapping_executor(lhs, rhs, mode, original_mapping, command)
 
 	-- Set up the new mapping
-	vim.keymap.set(mode, map, execute_mapping, {
+	vim.keymap.set(mode, lhs, execute_mapping, {
 		noremap = true,
 		silent = true,
 	})

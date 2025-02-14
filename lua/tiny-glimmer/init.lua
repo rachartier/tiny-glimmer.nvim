@@ -9,6 +9,8 @@ local Effect = require("tiny-glimmer.animation.effect")
 local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
 local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 
+local hijack_done = false
+
 M.config = {
 	enabled = true,
 	disable_warnings = true,
@@ -165,6 +167,10 @@ M.config = {
 	virt_text = {
 		priority = 2048,
 	},
+	hijack_ft_disabled = {
+		"alpha",
+		"snack_dashboard",
+	},
 }
 
 -- Helper Functions
@@ -270,56 +276,7 @@ function M.custom_remap(map, mode, callback)
 	require("tiny-glimmer.hijack").hijack(mode, lhs, rhs, original_mapping, callback)
 end
 
-function M.setup(options)
-	M.config = vim.tbl_deep_extend("force", M.config, options or {})
-	sanitize_highlights(M.config)
-
-	local animation_group = vim.api.nvim_create_augroup("TinyGlimmer", { clear = true })
-	local effects_pool = require("tiny-glimmer.premade_effects")
-
-	for name, effect_settings in pairs(M.config.animations) do
-		if not effects_pool[name] then
-			effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
-		else
-			effects_pool[name]:update_settings(effect_settings)
-		end
-	end
-
-	for support_name, support_settings in pairs(M.config.support) do
-		if support_settings.enabled then
-			local support = require("tiny-glimmer.support." .. support_name)
-
-			support.setup(support_settings)
-		end
-	end
-
-	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
-
-	vim.api.nvim_create_autocmd("TextYankPost", {
-		group = animation_group,
-		callback = function()
-			if not M.config.enabled or vim.v.event.operator == "d" or vim.v.event.operator == "c" then
-				return
-			end
-
-			local range = utils.get_range_yank()
-
-			AnimationFactory.get_instance():create_text_animation(M.config.default_animation, {
-				base = {
-					range = range,
-				},
-			})
-		end,
-	})
-
-	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
-		group = animation_group,
-		callback = function()
-			local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
-			vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
-		end,
-	})
-
+local function setup_hijacks()
     -- stylua: ignore start
     if M.config.overwrite.auto_map then
         local search_config = M.config.overwrite.search
@@ -353,6 +310,71 @@ function M.setup(options)
         end
     end
 	-- stylua: ignore end
+end
+
+function M.setup(options)
+	M.config = vim.tbl_deep_extend("force", M.config, options or {})
+	sanitize_highlights(M.config)
+
+	local animation_group = vim.api.nvim_create_augroup("TinyGlimmer", { clear = true })
+	local effects_pool = require("tiny-glimmer.premade_effects")
+
+	for name, effect_settings in pairs(M.config.animations) do
+		if not effects_pool[name] then
+			effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
+		else
+			effects_pool[name]:update_settings(effect_settings)
+		end
+	end
+
+	for support_name, support_settings in pairs(M.config.support) do
+		if support_settings.enabled then
+			local support = require("tiny-glimmer.support." .. support_name)
+			support.setup(support_settings)
+		end
+	end
+
+	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
+
+	vim.api.nvim_create_autocmd("BufEnter", {
+		group = animation_group,
+		callback = function(event)
+			if hijack_done then
+				return
+			end
+			if vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
+				return
+			end
+
+			setup_hijacks()
+			hijack_done = true
+		end,
+	})
+
+	vim.api.nvim_create_autocmd("TextYankPost", {
+		group = animation_group,
+		callback = function()
+			if not M.config.enabled or vim.v.event.operator == "d" or vim.v.event.operator == "c" then
+				return
+			end
+
+			local range = utils.get_range_yank()
+
+			AnimationFactory.get_instance():create_text_animation(M.config.default_animation, {
+				base = {
+					range = range,
+				},
+			})
+		end,
+	})
+
+	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
+		group = animation_group,
+		callback = function()
+			local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
+			vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
+		end,
+	})
 
 	if M.config.overwrite.search.enabled then
 		vim.api.nvim_create_autocmd("CmdlineLeave", {

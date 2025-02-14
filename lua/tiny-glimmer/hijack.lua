@@ -54,16 +54,14 @@ end
 ---@return function The mapping execution function
 local function create_mapping_executor(lhs, rhs, mode, original_mapping, command)
 	return function()
-		-- Handle original mapping
 		if original_mapping and not vim.tbl_isempty(original_mapping) then
-			local key_combination = original_mapping.lhs
 			local mapping_mode = original_mapping.mode
-			local new_rhs = original_mapping.rhs
 
 			if original_mapping.callback then
 				execute_callback_mapping(
 					original_mapping.callback,
-					key_combination,
+					original_mapping.lhs,
+					original_mapping.rhs,
 					mapping_mode,
 					original_mapping,
 					command

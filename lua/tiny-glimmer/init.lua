@@ -169,7 +169,7 @@ M.config = {
 	},
 	hijack_ft_disabled = {
 		"alpha",
-		"snack_dashboard",
+		"snacks_dashboard",
 	},
 }
 
@@ -336,12 +336,18 @@ function M.setup(options)
 
 	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
 
+	vim.schedule(function()
+		if not vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
+			setup_hijacks()
+		end
+	end)
+
 	vim.api.nvim_create_autocmd("BufEnter", {
-		group = animation_group,
 		callback = function(event)
 			if hijack_done then
 				return
 			end
+
 			if vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
 				return
 			end

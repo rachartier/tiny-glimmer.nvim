@@ -17,7 +17,13 @@ M.config = {
 		auto_map = true,
 		search = {
 			enabled = false,
-			default_animation = "pulse",
+			default_animation = {
+				name = "pulse",
+
+				settings = {
+					to_color = vim.opt.hlsearch and "CurSearch" or "Search",
+				},
+			},
 
 			next_mapping = "nzzzv",
 			prev_mapping = "Nzzzv",
@@ -315,19 +321,28 @@ function M.setup(options)
 	})
 
     -- stylua: ignore start
-	if M.config.overwrite.auto_map then
+    if M.config.overwrite.auto_map then
         local search_config = M.config.overwrite.search
         if search_config.enabled then
             M.custom_remap(search_config.next_mapping, "n", function() require("tiny-glimmer").search_next() end)
             M.custom_remap(search_config.prev_mapping, "n", function() require("tiny-glimmer").search_prev() end)
-            M.custom_remap("*","n", function() require("tiny-glimmer").search_under_cursor() end)
+            M.custom_remap("*", "n", function() require("tiny-glimmer").search_under_cursor() end)
+
+            if vim.opt.hlsearch then
+                local normal_hl = utils.get_highlight("Normal")
+
+                vim.api.nvim_set_hl(0, "CurSearch", {
+                    bg = "None",
+                    fg = normal_hl.fg
+                })
+            end
         end
 
         local paste_config = M.config.overwrite.paste
-		if paste_config.enabled then
+        if paste_config.enabled then
             M.custom_remap(paste_config.paste_mapping, "n", function() require("tiny-glimmer").paste() end)
             M.custom_remap(paste_config.Paste_mapping, "n", function() require("tiny-glimmer").Paste() end)
-		end
+        end
 
         local undo_config = M.config.overwrite.undo
         local redo_config = M.config.overwrite.redo
@@ -335,7 +350,7 @@ function M.setup(options)
             M.custom_remap(undo_config.undo_mapping, "n", function() require("tiny-glimmer").undo() end)
             M.custom_remap(redo_config.redo_mapping, "n", function() require("tiny-glimmer").redo() end)
         end
-	end
+    end
 	-- stylua: ignore end
 
 	if M.config.overwrite.search.enabled then
@@ -348,7 +363,6 @@ function M.setup(options)
 				end
 			end,
 		})
-		vim.opt.hlsearch = false
 	end
 
 	if M.config.presets.pulsar.enabled then

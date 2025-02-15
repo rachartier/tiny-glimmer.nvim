@@ -141,7 +141,6 @@ function test()
 
 	for i, line in ipairs(buf_content) do
 		if #line > 0 then
-			local range = {
 				start_line = i - 1,
 				start_col = 0,
 				end_line = i - 1,
@@ -169,7 +168,6 @@ function test()
 					base = {
 						range = range,
 					},
-					content = { line },
 				})
 			end
 		end

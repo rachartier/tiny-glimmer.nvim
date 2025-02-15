@@ -3,20 +3,14 @@ local easing_functions = require("tiny-glimmer.animation.easing")
 local Effect = require("tiny-glimmer.animation.effect")
 
 local function create_effect(opts)
-	return Effect.new({}, opts.update_fn, opts.builder)
+	return Effect.new({}, opts.update_fn)
 end
 
 return {
 	fade = create_effect({
-		builder = function(self)
-			return {
-				initial = utils.hex_to_rgb(self.settings.from_color),
-				final = utils.hex_to_rgb(self.settings.to_color),
-			}
-		end,
 		update_fn = function(self, progress, ease)
-			local initial = self.starter.initial
-			local final = self.starter.final
+			local initial = utils.hex_to_rgb(self.settings.from_color)
+			local final = utils.hex_to_rgb(self.settings.to_color)
 			local current = {}
 
 			local fn = easing_functions[ease]
@@ -31,15 +25,9 @@ return {
 		end,
 	}),
 	reverse_fade = create_effect({
-		builder = function(self)
-			return {
-				initial = utils.hex_to_rgb(self.settings.from_color),
-				final = utils.hex_to_rgb(self.settings.to_color),
-			}
-		end,
 		update_fn = function(self, progress, ease)
-			local initial = self.starter.initial
-			local final = self.starter.final
+			local initial = utils.hex_to_rgb(self.settings.from_color)
+			local final = utils.hex_to_rgb(self.settings.to_color)
 
 			local fn = easing_functions[ease]
 
@@ -53,16 +41,11 @@ return {
 		end,
 	}),
 	bounce = create_effect({
-		builder = function(self)
-			return {
-				initial = utils.hex_to_rgb(self.settings.from_color),
-				final = utils.hex_to_rgb(self.settings.to_color),
-			}
-		end,
 		update_fn = function(self, progress)
 			local oscillation = math.abs(math.sin(progress * math.pi * self.settings.oscillation_count))
-			local initial = self.starter.initial
-			local final = self.starter.final
+
+			local initial = utils.hex_to_rgb(self.settings.from_color)
+			local final = utils.hex_to_rgb(self.settings.to_color)
 
 			local current = {
 				r = math.max(initial.r + (final.r - initial.r) * oscillation, 0),
@@ -74,15 +57,9 @@ return {
 		end,
 	}),
 	left_to_right = create_effect({
-		builder = function(self)
-			return {
-				initial = utils.hex_to_rgb(self.settings.from_color),
-				final = utils.hex_to_rgb(self.settings.to_color),
-			}
-		end,
 		update_fn = function(self, progress)
-			local initial = self.starter.initial
-			local final = self.starter.final
+			local initial = utils.hex_to_rgb(self.settings.from_color)
+			local final = utils.hex_to_rgb(self.settings.to_color)
 
 			local current = {
 				r = initial.r + (final.r - initial.r) * math.min(self.settings.min_progress, progress),
@@ -94,15 +71,9 @@ return {
 		end,
 	}),
 	pulse = create_effect({
-		builder = function(self)
-			return {
-				initial = utils.hex_to_rgb(self.settings.from_color),
-				final = utils.hex_to_rgb(self.settings.to_color),
-			}
-		end,
 		update_fn = function(self, progress)
-			local initial = self.starter.initial
-			local final = self.starter.final
+			local initial = utils.hex_to_rgb(self.settings.from_color)
+			local final = utils.hex_to_rgb(self.settings.to_color)
 
 			local pulse = math.abs(math.sin(progress * math.pi * self.settings.pulse_count))
 			pulse = pulse * self.settings.intensity

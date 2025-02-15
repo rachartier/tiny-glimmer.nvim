@@ -34,8 +34,6 @@ function GlimmerAnimation.new(effect, opts)
 	local self = setmetatable({}, GlimmerAnimation)
 
 	self.effect = effect
-	self.effect:build_starter()
-
 	self.default_effect_settings = vim.deepcopy(effect.settings)
 
 	self.range = opts.range

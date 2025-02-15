@@ -71,7 +71,6 @@ require('tiny-glimmer').setup({
     -- Disable this if you wants to debug highlighting issues
     disable_warnings = true,
 
-    default_animation = "fade",
     refresh_interval_ms = 6,
 
     overwrite = {
@@ -115,6 +114,10 @@ require('tiny-glimmer').setup({
 
             -- Keys to navigate to the previous match
             prev_mapping = "Nzzzv",
+        },
+        yank = {
+          	enabled = true,
+          	default_animation = "fade",
         },
         paste = {
             enabled = false,
@@ -236,7 +239,7 @@ require('tiny-glimmer').setup({
             intensity = 1.2,
         },
 
-		-- You can add as many animations as you want
+				-- You can add as many animations as you want
         custom = {
             -- You can also add as many custom options as you want
             -- Only `max_duration` and `chars_for_max_duration` is required
@@ -255,6 +258,10 @@ require('tiny-glimmer').setup({
             effect = function(self, progress)
                 return self.settings.color, progress
             end,
+        },
+        hijack_ft_disabled = {
+            "alpha",
+            "snacks_dashboard",
         },
     },
     virt_text = {

@@ -7,6 +7,14 @@
 ---@field animation_refresh number The refresh rate of the animation (in ms)
 ---@field instance AnimationFactory
 ---@field buffers table {number: {animations: table, named_animations: table}}
+---@field _prepare_animation_effect fun(buffer: number, animation_type: string|AnimationType, opts: table): table
+---@field _manage_animation fun(animation_obj: table, buffer: number): nil
+---@field _manage_named_animation fun(name: string, animation_obj: table, buffer: number): nil
+---@field create_text_animation fun(animation_type: string|AnimationType, opts: CreateAnimationOpts): nil
+---@field create_named_text_animation fun(name: string, animation_type: string|AnimationType, opts: CreateAnimationOpts): nil
+---@field create_line_animation fun(animation_type: string|AnimationType, opts: CreateAnimationOpts): nil
+---@field initialize fun(opts: AnimationFactorySettings, effect_pool: table, animation_refresh: number): AnimationFactory
+---@field get_instance fun(): AnimationFactory
 
 ---@class AnimationType
 ---@field name string

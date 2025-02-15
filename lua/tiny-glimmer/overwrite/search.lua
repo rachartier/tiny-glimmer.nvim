@@ -28,6 +28,18 @@ local function search(opts, search_pattern)
 	end)
 end
 
+function M.setup()
+	vim.api.nvim_create_autocmd("CmdlineLeave", {
+		group = animation_group,
+		callback = function()
+			local cmd_type = vim.fn.getcmdtype()
+			if cmd_type == "/" or cmd_type == "?" then
+				M.search_on_line(M.config.overwrite.search)
+			end
+		end,
+	})
+end
+
 function M.search_on_line(opts)
 	search(opts, vim.fn.getreg("/"))
 end

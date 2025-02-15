@@ -11,6 +11,8 @@ local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 
 local hijack_done = false
 
+local animation_group = require("tiny-glimmer.namespace").tiny_glimmer_animation_group
+
 M.config = {
 	enabled = true,
 	disable_warnings = true,
@@ -36,6 +38,10 @@ M.config = {
 
 			paste_mapping = "p",
 			Paste_mapping = "P",
+		},
+		yank = {
+			enabled = true,
+			default_animation = "fade",
 		},
 		undo = {
 			enabled = false,
@@ -96,9 +102,9 @@ M.config = {
 		},
 	},
 
-	default_animation = "fade",
 	refresh_interval_ms = 6,
 	transparency_color = nil,
+
 	animations = {
 		fade = {
 			max_duration = 400,
@@ -316,7 +322,6 @@ function M.setup(options)
 	M.config = vim.tbl_deep_extend("force", M.config, options or {})
 	sanitize_highlights(M.config)
 
-	local animation_group = vim.api.nvim_create_augroup("TinyGlimmer", { clear = true })
 	local effects_pool = require("tiny-glimmer.premade_effects")
 
 	for name, effect_settings in pairs(M.config.animations) do
@@ -329,9 +334,26 @@ function M.setup(options)
 
 	for support_name, support_settings in pairs(M.config.support) do
 		if support_settings.enabled then
-			local support = require("tiny-glimmer.support." .. support_name)
-			support.setup(support_settings)
+			local ok, support = pcall(require, "tiny-glimmer.support." .. support_name)
+			if ok and support.setup then
+				support.setup(support_settings)
+			end
 		end
+	end
+
+	for overwrite_name, overwrite_settings in pairs(M.config.overwrite) do
+		if type(overwrite_settings) == "table" then
+			if overwrite_settings.enabled then
+				local ok, overwrite_module = pcall(require, "tiny-glimmer.overwrite." .. overwrite_name)
+				if ok and overwrite_module.setup then
+					overwrite_module.setup(overwrite_settings)
+				end
+			end
+		end
+	end
+
+	if M.config.presets.pulsar.enabled then
+		require("tiny-glimmer.presets.pulsar").setup(M.config.presets.pulsar)
 	end
 
 	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
@@ -356,24 +378,6 @@ function M.setup(options)
 			hijack_done = true
 		end,
 	})
-
-	vim.api.nvim_create_autocmd("TextYankPost", {
-		group = animation_group,
-		callback = function()
-			if not M.config.enabled or vim.v.event.operator == "d" or vim.v.event.operator == "c" then
-				return
-			end
-
-			local range = utils.get_range_yank()
-
-			AnimationFactory.get_instance():create_text_animation(M.config.default_animation, {
-				base = {
-					range = range,
-				},
-			})
-		end,
-	})
-
 	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
 		group = animation_group,
 		callback = function()
@@ -381,42 +385,6 @@ function M.setup(options)
 			vim.api.nvim_buf_clear_namespace(0, namespace, 0, -1)
 		end,
 	})
-
-	if M.config.overwrite.search.enabled then
-		vim.api.nvim_create_autocmd("CmdlineLeave", {
-			group = animation_group,
-			callback = function()
-				local cmd_type = vim.fn.getcmdtype()
-				if cmd_type == "/" or cmd_type == "?" then
-					overwrite.search.search_on_line(M.config.overwrite.search)
-				end
-			end,
-		})
-	end
-
-	if M.config.presets.pulsar.enabled then
-		local pulsar = M.config.presets.pulsar
-
-		vim.api.nvim_create_autocmd(pulsar.on_event, {
-			group = animation_group,
-			callback = function()
-				vim.schedule(function()
-					local pos = vim.api.nvim_win_get_cursor(0)
-
-					AnimationFactory.get_instance():create_line_animation(M.config.presets.pulsar.default_animation, {
-						base = {
-							range = {
-								start_line = pos[1] - 1,
-								start_col = 0,
-								end_line = pos[1],
-								end_col = 0,
-							},
-						},
-					})
-				end)
-			end,
-		})
-	end
 end
 
 vim.api.nvim_create_user_command("TinyGlimmer", function(args)

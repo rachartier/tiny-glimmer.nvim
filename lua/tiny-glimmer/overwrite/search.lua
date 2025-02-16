@@ -1,5 +1,7 @@
 local M = {}
 
+local animation_group = require("tiny-glimmer.namespace").animation_group
+
 local function search(opts, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
 
@@ -28,13 +30,13 @@ local function search(opts, search_pattern)
 	end)
 end
 
-function M.setup()
+function M.setup(opts)
 	vim.api.nvim_create_autocmd("CmdlineLeave", {
 		group = animation_group,
 		callback = function()
 			local cmd_type = vim.fn.getcmdtype()
 			if cmd_type == "/" or cmd_type == "?" then
-				M.search_on_line(M.config.overwrite.search)
+				M.search_on_line(opts)
 			end
 		end,
 	})

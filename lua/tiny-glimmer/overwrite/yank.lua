@@ -14,11 +14,13 @@ function M.setup(opts)
 
 			local range = utils.get_range_yank()
 
-			AnimationFactory.get_instance():create_text_animation(opts.default_animation, {
-				base = {
-					range = range,
-				},
-			})
+			vim.schedule(function()
+				AnimationFactory.get_instance():create_text_animation(opts.default_animation, {
+					base = {
+						range = range,
+					},
+				})
+			end)
 		end,
 	})
 end

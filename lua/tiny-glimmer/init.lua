@@ -102,7 +102,7 @@ M.config = {
 		},
 	},
 
-	refresh_interval_ms = 6,
+	refresh_interval_ms = 8,
 	transparency_color = nil,
 
 	animations = {

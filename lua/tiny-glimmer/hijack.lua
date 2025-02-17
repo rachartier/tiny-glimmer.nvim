@@ -54,22 +54,7 @@ end
 ---@return function The mapping execution function
 local function create_mapping_executor(lhs, rhs, mode, original_mapping, command)
 	return function()
-		if original_mapping and not vim.tbl_isempty(original_mapping) then
-			local mapping_mode = original_mapping.mode
-
-			if original_mapping.callback then
-				execute_callback_mapping(
-					original_mapping.callback,
-					original_mapping.lhs,
-					original_mapping.rhs,
-					mapping_mode,
-					original_mapping,
-					command
-				)
-			elseif original_mapping.rhs then
-				vim.api.nvim_feedkeys(add_count_and_registers(original_mapping.rhs), original_mapping.mode, false)
-			end
-		elseif rhs then
+		if rhs then
 			vim.api.nvim_feedkeys(add_count_and_registers(rhs), mode, false)
 		elseif lhs then
 			vim.api.nvim_feedkeys(add_count_and_registers(lhs), mode, false)

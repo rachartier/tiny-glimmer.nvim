@@ -90,6 +90,12 @@ end
 function M.hijack(mode, lhs, rhs, original_mapping, command)
 	local execute_mapping = create_mapping_executor(lhs, rhs, mode, original_mapping, command)
 
+	-- remove mode whitespaces
+	mode = mode:gsub("%s+", "")
+	if mode == nil or mode == "" then
+		mode = "n"
+	end
+
 	-- Set up the new mapping
 	vim.keymap.set(mode, lhs, execute_mapping, {
 		noremap = true,

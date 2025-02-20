@@ -5,7 +5,9 @@ local animation_group = require("tiny-glimmer.namespace").animation_group
 local function search(opts, search_pattern)
 	local buf = vim.api.nvim_get_current_buf()
 
-	vim.schedule(function()
+	-- Fix for flash.nvim
+	-- Need to wait for the cursor to be updated, and a simple vim.schedule is still too early
+	vim.defer_fn(function()
 		local cursor_pos = vim.api.nvim_win_get_cursor(0)
 		local matches = vim.fn.matchbufline(buf, search_pattern, cursor_pos[1], cursor_pos[1])
 
@@ -27,7 +29,7 @@ local function search(opts, search_pattern)
 					range = range,
 				},
 			})
-	end)
+	end, 5)
 end
 
 function M.setup(opts)

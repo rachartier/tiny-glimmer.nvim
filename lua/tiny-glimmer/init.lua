@@ -31,6 +31,8 @@ M.config = {
 
 			next_mapping = "n",
 			prev_mapping = "N",
+			next_under_cursor_mapping = "*",
+			prev_under_cursor_mapping = "#",
 		},
 		paste = {
 			enabled = true,
@@ -289,8 +291,8 @@ local function setup_hijacks()
         if search_config.enabled then
             M.custom_remap(search_config.next_mapping, "n", function() require("tiny-glimmer").search_next() end)
             M.custom_remap(search_config.prev_mapping, "n", function() require("tiny-glimmer").search_prev() end)
-            M.custom_remap("*", "n", function() require("tiny-glimmer").search_under_cursor() end)
-            M.custom_remap("#", "n", function() require("tiny-glimmer").search_under_cursor() end)
+            M.custom_remap(search_config.next_under_cursor_mapping, "n", function() require("tiny-glimmer").search_under_cursor() end)
+            M.custom_remap(search_config.prev_under_cursor_mapping, "n", function() require("tiny-glimmer").search_under_cursor() end)
 
             if vim.opt.hlsearch then
                 local normal_hl = utils.get_highlight("Normal")
@@ -306,6 +308,7 @@ local function setup_hijacks()
         if paste_config.enabled then
             M.custom_remap(paste_config.paste_mapping, "n", function() require("tiny-glimmer").paste() end)
             M.custom_remap(paste_config.Paste_mapping, "n", function() require("tiny-glimmer").Paste() end)
+            M.custom_remap("<c-r>", "i", function() require("tiny-glimmer").paste() end)
         end
 
         local undo_config = M.config.overwrite.undo

@@ -1,5 +1,22 @@
 local M = {}
 
+---Adds count and register information to the key sequence
+---@param key_sequence string The key sequence to modify
+---@return string Modified key sequence with count and register
+local function add_count_and_registers(key_sequence)
+	local modified_keys = vim.api.nvim_replace_termcodes(key_sequence, true, false, true)
+
+	if vim.v.register ~= nil then
+		modified_keys = '"' .. vim.v.register .. modified_keys
+	end
+
+	if vim.v.count > 1 then
+		modified_keys = vim.v.count .. modified_keys
+	end
+
+	return modified_keys
+end
+
 ---Executes a command multiple times based on count
 ---@param command string|function The command to execute
 local function execute_with_count(command)
@@ -22,7 +39,7 @@ function M.hijack(mode, lhs, rhs, original_mapping, command)
 	if mode == nil or mode == "" then
 		mode = "n"
 	end
-	local existing_mapping = vim.fn.maparg(lhs, "n", false, true)
+	local existing_mapping = vim.fn.maparg(lhs, mode, false, true)
 
 	vim.api.nvim_set_keymap(mode, lhs, "", {
 		noremap = true,
@@ -32,15 +49,13 @@ function M.hijack(mode, lhs, rhs, original_mapping, command)
 			end
 
 			if existing_mapping and existing_mapping.callback then
-				existing_mapping.callback()
+				for _ = 1, vim.v.count1 do
+					existing_mapping.callback()
+				end
 			elseif existing_mapping and existing_mapping.rhs then
-				vim.api.nvim_feedkeys(
-					vim.api.nvim_replace_termcodes(existing_mapping.rhs, true, false, true),
-					"n",
-					true
-				)
+				vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
 			else
-				vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(lhs, true, false, true), "n", true)
+				vim.api.nvim_feedkeys(add_count_and_registers(lhs), "n", true)
 			end
 		end,
 	})

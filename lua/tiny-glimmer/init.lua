@@ -308,7 +308,6 @@ local function setup_hijacks()
         if paste_config.enabled then
             M.custom_remap(paste_config.paste_mapping, "n", function() require("tiny-glimmer").paste() end)
             M.custom_remap(paste_config.Paste_mapping, "n", function() require("tiny-glimmer").Paste() end)
-            M.custom_remap("<c-r>", "i", function() require("tiny-glimmer").paste() end)
         end
 
         local undo_config = M.config.overwrite.undo

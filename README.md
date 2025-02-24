@@ -100,16 +100,8 @@ require('tiny-glimmer').setup({
         -- },
         -- settings needs to respect the animation you choose settings
         --
-        -- All "mapping" can be set in 2 ways:
-        -- 1. A string with the key you want to map
-        --    Example:
-        --    paste_mapping = "p"
-        -- 2. A table with the key you want to map and its actions
-        --    Example:
-        --    paste_mapping = {
-        --        lhs = "p"
-        --        rhs = "<Plug>(YankyPutAfter)"
-        --    }
+        -- All "mapping" needs to have a correct lhs.
+        -- It will try to automatically use what you already defined before.
         yank = {
               enabled = true,
               default_animation = "fade",
@@ -119,10 +111,10 @@ require('tiny-glimmer').setup({
             default_animation = "pulse",
 
             -- Keys to navigate to the next match
-            next_mapping = "nzzzv",
+            next_mapping = "n",
 
             -- Keys to navigate to the previous match
-            prev_mapping = "Nzzzv",
+            prev_mapping = "N",
         },
         paste = {
             enabled = true,
@@ -412,6 +404,9 @@ You should disable your own `TextYankPost` autocmd that calls `vim.highlight.on_
 
 ### Transparent background issues?
 Set the `transparency_color` option to your desired background color.
+
+### How to use it with `yanky.nvim` ?
+You should add `yanky.nvim` in `tiny-glimmer` dependecies.
 
 ## Thanks
 

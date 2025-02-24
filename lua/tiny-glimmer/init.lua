@@ -29,8 +29,8 @@ M.config = {
 				},
 			},
 
-			next_mapping = "nzzzv",
-			prev_mapping = "Nzzzv",
+			next_mapping = "n",
+			prev_mapping = "N",
 		},
 		paste = {
 			enabled = true,

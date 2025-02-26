@@ -175,10 +175,6 @@ M.config = {
 	virt_text = {
 		priority = 2048,
 	},
-	hijack_ft_disabled = {
-		"alpha",
-		"snacks_dashboard",
-	},
 }
 
 -- Helper Functions
@@ -280,8 +276,7 @@ function M.custom_remap(map, mode, callback)
 		end
 	end
 
-	local original_mapping = vim.fn.maparg(lhs, mode, false, true)
-	require("tiny-glimmer.hijack").hijack(mode, lhs, rhs, original_mapping, callback)
+	require("tiny-glimmer.hijack").hijack(mode, lhs, rhs, callback)
 end
 
 local function setup_hijacks()
@@ -363,24 +358,8 @@ function M.setup(options)
 
 	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
 
-	vim.schedule(function()
-		setup_hijacks()
-	end)
+	setup_hijacks()
 
-	vim.api.nvim_create_autocmd("BufEnter", {
-		callback = function(event)
-			if hijack_done then
-				return
-			end
-
-			if vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
-				return
-			end
-
-			setup_hijacks()
-			hijack_done = true
-		end,
-	})
 	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
 		group = animation_group,
 		callback = function()

@@ -47,16 +47,13 @@ function M.hijack(mode, lhs, rhs, command)
 		end
 
 		if existing_mapping and existing_mapping.callback then
-			print("existing_mapping.callback")
 			for _ = 1, vim.v.count1 do
 				existing_mapping.callback()
 			end
 		elseif existing_mapping and existing_mapping.rhs then
-			print("existing_mapping.rhs")
 			vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
 		else
 			vim.api.nvim_feedkeys(add_count_and_registers(lhs), "n", true)
-			print("vim.api.nvim_feedkeys(add_count_and_registers(lhs), 'n', true)")
 		end
 	end, {
 		noremap = true,

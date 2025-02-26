@@ -41,23 +41,22 @@ function M.hijack(mode, lhs, rhs, original_mapping, command)
 	end
 	local existing_mapping = vim.fn.maparg(lhs, mode, false, true)
 
-	vim.api.nvim_set_keymap(mode, lhs, "", {
-		noremap = true,
-		callback = function()
-			if command then
-				execute_with_count(command)
-			end
+	vim.keymap.set(mode, lhs, function()
+		if command then
+			execute_with_count(command)
+		end
 
-			if existing_mapping and existing_mapping.callback then
-				for _ = 1, vim.v.count1 do
-					existing_mapping.callback()
-				end
-			elseif existing_mapping and existing_mapping.rhs then
-				vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
-			else
-				vim.api.nvim_feedkeys(add_count_and_registers(lhs), "n", true)
+		if existing_mapping and existing_mapping.callback then
+			for _ = 1, vim.v.count1 do
+				existing_mapping.callback()
 			end
-		end,
+		elseif existing_mapping and existing_mapping.rhs then
+			vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
+		else
+			vim.api.nvim_feedkeys(add_count_and_registers(lhs), "n", true)
+		end
+	end, {
+		noremap = true,
 	})
 end
 

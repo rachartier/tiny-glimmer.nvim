@@ -34,7 +34,7 @@ end
 ---@param map string The key mapping to hijack
 ---@param original_mapping table The original mapping details
 ---@param command string|function|nil Additional command to execute
-function M.hijack(mode, lhs, rhs, original_mapping, command)
+function M.hijack(mode, lhs, rhs, command)
 	mode = mode:gsub("%s+", "")
 	if mode == nil or mode == "" then
 		mode = "n"
@@ -47,13 +47,16 @@ function M.hijack(mode, lhs, rhs, original_mapping, command)
 		end
 
 		if existing_mapping and existing_mapping.callback then
+			print("existing_mapping.callback")
 			for _ = 1, vim.v.count1 do
 				existing_mapping.callback()
 			end
 		elseif existing_mapping and existing_mapping.rhs then
+			print("existing_mapping.rhs")
 			vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
 		else
 			vim.api.nvim_feedkeys(add_count_and_registers(lhs), "n", true)
+			print("vim.api.nvim_feedkeys(add_count_and_registers(lhs), 'n', true)")
 		end
 	end, {
 		noremap = true,

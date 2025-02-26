@@ -314,6 +314,9 @@ local function setup_hijacks()
         local redo_config = M.config.overwrite.redo
         if undo_config.enabled then
             M.custom_remap(undo_config.undo_mapping, "n", function() require("tiny-glimmer").undo() end)
+        end
+
+        if redo_config.enabled then
             M.custom_remap(redo_config.redo_mapping, "n", function() require("tiny-glimmer").redo() end)
         end
     end
@@ -361,9 +364,7 @@ function M.setup(options)
 	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
 
 	vim.schedule(function()
-		if not vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
-			setup_hijacks()
-		end
+		setup_hijacks()
 	end)
 
 	vim.api.nvim_create_autocmd("BufEnter", {

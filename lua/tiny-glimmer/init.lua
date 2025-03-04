@@ -9,7 +9,7 @@ local Effect = require("tiny-glimmer.animation.effect")
 local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
 local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 
-local hijack_done = false
+M.hijack_done = false
 
 local animation_group = require("tiny-glimmer.namespace").tiny_glimmer_animation_group
 
@@ -174,6 +174,10 @@ M.config = {
 	},
 	virt_text = {
 		priority = 2048,
+	},
+	hijack_ft_disabled = {
+		"alpha",
+		"snacks_dashboard",
 	},
 }
 
@@ -358,7 +362,23 @@ function M.setup(options)
 
 	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
 
-	setup_hijacks()
+	vim.defer_fn(function()
+		if vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
+			vim.api.nvim_create_autocmd({ "BufEnter" }, {
+				group = animation_group,
+				callback = function()
+					if M.hijack_done then
+						return
+					end
+					setup_hijacks()
+					M.hijack_done = true
+				end,
+			})
+			return
+		end
+
+		setup_hijacks()
+	end, 100)
 
 	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
 		group = animation_group,

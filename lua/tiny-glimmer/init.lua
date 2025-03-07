@@ -178,6 +178,7 @@ M.config = {
 	hijack_ft_disabled = {
 		"alpha",
 		"snacks_dashboard",
+		"snacks_picker_input",
 	},
 }
 
@@ -370,14 +371,17 @@ function M.setup(options)
 					if M.hijack_done then
 						return
 					end
-					setup_hijacks()
-					M.hijack_done = true
+
+					if not vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
+						setup_hijacks()
+						M.hijack_done = true
+					end
 				end,
 			})
 			return
+		else
+			setup_hijacks()
 		end
-
-		setup_hijacks()
 	end, 100)
 
 	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {

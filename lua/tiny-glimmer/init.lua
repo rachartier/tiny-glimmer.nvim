@@ -363,26 +363,24 @@ function M.setup(options)
 
 	AnimationFactory.initialize(M.config, effects_pool, M.config.refresh_interval_ms)
 
-	vim.defer_fn(function()
-		if vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
-			vim.api.nvim_create_autocmd({ "BufEnter" }, {
-				group = animation_group,
-				callback = function()
-					if M.hijack_done then
-						return
-					end
+	if vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
+		vim.api.nvim_create_autocmd({ "BufEnter" }, {
+			group = animation_group,
+			callback = function()
+				if M.hijack_done then
+					return
+				end
 
-					if not vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
-						setup_hijacks()
-						M.hijack_done = true
-					end
-				end,
-			})
-			return
-		else
-			setup_hijacks()
-		end
-	end, 100)
+				if not vim.tbl_contains(M.config.hijack_ft_disabled, vim.bo.filetype) then
+					setup_hijacks()
+					M.hijack_done = true
+				end
+			end,
+		})
+		return
+	else
+		setup_hijacks()
+	end
 
 	vim.api.nvim_create_autocmd({ "BufEnter", "BufLeave" }, {
 		group = animation_group,

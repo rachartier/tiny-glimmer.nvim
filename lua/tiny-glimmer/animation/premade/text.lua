@@ -36,7 +36,7 @@ function TextAnimation.new(effect, opts)
 	local self = setmetatable({}, TextAnimation)
 
 	self.virtual_text_priority = opts.virtual_text_priority or 128
-	self.event_type = vim.v.event.regtype
+	self.event_type = opts.event and opts.event.regtype or vim.v.event.regtype
 	self.operation = vim.v.event.operator
 
 	self.event = {

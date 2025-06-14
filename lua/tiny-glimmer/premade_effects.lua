@@ -78,16 +78,21 @@ return {
 			return {
 				initial = utils.hex_to_rgb(self.settings.from_color),
 				final = utils.hex_to_rgb(self.settings.to_color),
+				min_progress = self.settings.min_progress or 0,
+				max_progress = self.settings.max_progress or 1,
 			}
 		end,
-		update_fn = function(self, progress)
+		update_fn = function(self, progress, ease)
 			local initial = self.starter.initial
 			local final = self.starter.final
+			local fn = easing_functions[ease] or easing_functions.linear
+
+			local p = utils.clamp(progress, self.starter.min_progress, 1)
 
 			local current = {
-				r = initial.r + (final.r - initial.r) * math.min(self.settings.min_progress, progress),
-				g = initial.g + (final.g - initial.g) * math.min(self.settings.min_progress, progress),
-				b = initial.b + (final.b - initial.b) * math.min(self.settings.min_progress, progress),
+				r = utils.clamp(fn(math.min(p, self.starter.max_progress), initial.r, final.r - initial.r, 1), 0, 255),
+				g = utils.clamp(fn(math.min(p, self.starter.max_progress), initial.g, final.g - initial.g, 1), 0, 255),
+				b = utils.clamp(fn(math.min(p, self.starter.max_progress), initial.b, final.b - initial.b, 1), 0, 255),
 			}
 
 			return utils.rgb_to_hex(current), progress

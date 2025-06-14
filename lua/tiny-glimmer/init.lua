@@ -135,9 +135,9 @@ M.config = {
 		left_to_right = {
 			max_duration = 350,
 			min_duration = 350,
-			min_progress = 0.85,
-			chars_for_max_duration = 25,
+			easing = "easeInExpo",
 			lingering_time = 50,
+			chars_for_max_duration = 25,
 			from_color = hl_visual_bg,
 			to_color = hl_normal_bg,
 		},

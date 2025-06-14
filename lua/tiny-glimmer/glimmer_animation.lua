@@ -184,7 +184,6 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 	self.active = true
 	self.start_time = get_time_ms()
 
-	-- Pre-calculate range size and reserve IDs in one operation
 	local lines_count = self.range.end_line - self.range.start_line + 1
 	self.reserved_ids = namespace_id_pool.reserve_ns_ids(lines_count)
 
@@ -214,13 +213,14 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 							on_complete()
 						end
 					end, lingering_time)
+					break
 				else
 					self:stop()
 					if on_complete then
 						on_complete()
 					end
+					break
 				end
-				break
 			end
 
 			-- Schedule next frame

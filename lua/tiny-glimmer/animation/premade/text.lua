@@ -114,7 +114,7 @@ local function compute_lines_range(self, animation_progress)
 			table.insert(lines, {
 				line_number = i,
 				start_position = start_position,
-				count = count,
+				count = math.ceil(count * animation_progress),
 			})
 		end
 	end

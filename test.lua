@@ -137,41 +137,42 @@ BB
 local AnimationFactory = require("tiny-glimmer.animation.factory")
 
 function test()
-	local buf_content = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local buf_content = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
-	for i, line in ipairs(buf_content) do
-		if #line > 0 then
-				start_line = i - 1,
-				start_col = 0,
-				end_line = i - 1,
-				end_col = #line,
-			}
+  for i, line in ipairs(buf_content) do
+    if #line > 0 then
+      local range = {
+        start_line = i - 1,
+        start_col = 0,
+        end_line = i - 1,
+        end_col = #line,
+      }
 
-			local animation_type = "none"
+      local animation_type = "none"
 
-			if line:lower():find("reverse fade") then
-				animation_type = "reverse_fade"
-			elseif line:lower():find("fade") then
-				animation_type = "fade"
-			elseif line:lower():find("bounce") then
-				animation_type = "bounce"
-			elseif line:lower():find("left to right") then
-				animation_type = "left_to_right"
-			elseif line:lower():find("pulse") then
-				animation_type = "pulse"
-			elseif line:lower():find("rainbow") then
-				animation_type = "rainbow"
-			end
+      if line:lower():find("reverse fade") then
+        animation_type = "reverse_fade"
+      elseif line:lower():find("fade") then
+        animation_type = "fade"
+      elseif line:lower():find("bounce") then
+        animation_type = "bounce"
+      elseif line:lower():find("left_to_right") then
+        animation_type = "left_to_right"
+      elseif line:lower():find("pulse") then
+        animation_type = "pulse"
+      elseif line:lower():find("rainbow") then
+        animation_type = "rainbow"
+      end
 
-			if animation_type ~= "none" then
-				AnimationFactory.get_instance():create_text_animation(animation_type, {
-					base = {
-						range = range,
-					},
-				})
-			end
-		end
-	end
+      if animation_type ~= "none" then
+        AnimationFactory.get_instance():create_text_animation("left_to_right", {
+          base = {
+            range = range,
+          },
+        })
+      end
+    end
+  end
 end
 
 -- AnimationFactory.get_instance():create_rectangle_animation("rainbow", {
@@ -189,6 +190,6 @@ local i = require("tiny-glimmer.namespace_id_pool")
 
 vim.print(i.get_pool_stats())
 
--- test()
+test()
 
 -- vim.api.nvim_set_hl(0, "CursorLine", { bg = "#000000" })

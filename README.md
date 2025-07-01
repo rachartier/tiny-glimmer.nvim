@@ -22,7 +22,10 @@ https://github.com/user-attachments/assets/1578d19f-f245-4593-a28f-b7e9593cbc68
 https://github.com/user-attachments/assets/6bc98a8f-8b7e-4b57-958a-74ad5372612f
 
 ### Undo/Redo support
-![tiny_glimmer_demo_undo_redo](https://github.com/user-attachments/assets/6e980884-b425-42d2-a179-6c6126196bd5)
+https://github.com/user-attachments/assets/5938e28c-2ff3-4e97-8707-67c24e61895c
+
+
+
 - Smooth animations for various operations:
   - Yank and paste
   - Search navigation

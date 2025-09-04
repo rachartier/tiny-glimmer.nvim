@@ -42,6 +42,18 @@ function M.hijack(mode, lhs, rhs, command)
   local existing_mapping = vim.fn.maparg(lhs, mode, false, true)
 
   vim.keymap.set(mode, lhs, function()
+    -- When a macro is executing, completely bypass the hijack and use original behavior
+    if vim.fn.reg_executing() ~= "" then
+      if existing_mapping and existing_mapping.callback then
+        existing_mapping.callback()
+      elseif existing_mapping and existing_mapping.rhs then
+        vim.api.nvim_exec2("normal! " .. existing_mapping.rhs, {})
+      else
+        vim.api.nvim_exec2("normal! " .. lhs, {})
+      end
+      return
+    end
+
     if command then
       execute_with_count(command)
     end

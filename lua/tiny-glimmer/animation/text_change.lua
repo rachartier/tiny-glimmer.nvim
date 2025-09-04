@@ -3,6 +3,11 @@ local M = {}
 ---@param callback function|nil Function to call with the merged ranges
 ---@return nil
 function M.handle_text_change_animation(callback)
+  -- check macro execution and skip text_change animation if a macro is running
+  if vim.fn.reg_executing() ~= "" then
+    return
+  end
+
   local ranges = {}
   local final_ranges = {}
 
@@ -30,6 +35,12 @@ function M.handle_text_change_animation(callback)
       return true
     end
 
+    -- re-check macro execution during buffer change events
+    if vim.fn.reg_executing() ~= "" then
+      detach_listener = true
+      return true
+    end
+
     -- Calculate the affected text range
     local end_row = start_row + new_end_row
     local end_col = start_col + new_end_col
@@ -53,7 +64,7 @@ function M.handle_text_change_animation(callback)
     on_bytes = on_bytes,
   })
 
-  vim.schedule(function()
+  vim.defer_fn(function()
     detach_listener = true
 
     local range_count = #ranges
@@ -102,7 +113,7 @@ function M.handle_text_change_animation(callback)
     if callback then
       callback(final_ranges)
     end
-  end)
+  end, 10)
 end
 
 return M

@@ -318,23 +318,6 @@ Available easing functions for `fade` and `reverse_fade` animations:
 - `inBack`, `outBack`, `inOutBack`, `outInBack`
 - `inBounce`, `outBounce`, `inOutBounce`, `outInBounce`
 
-### Animation Settings
-
-Common configuration options across animation types:
-
-| Option | Description | Applicable Animations |
-|--------|-------------|----------------------|
-| `max_duration` | Maximum duration in milliseconds | All |
-| `min_duration` | Minimum duration in milliseconds | All |
-| `chars_for_max_duration` | Character count that triggers max duration | All |
-| `easing` | Easing function name | fade, reverse_fade |
-| `from_color` | Start color (highlight group or hex) | All except rainbow |
-| `to_color` | End color (highlight group or hex) | All except rainbow |
-| `lingering_time` | Time to stay visible after completion (ms) | left_to_right |
-| `oscillation_count` | Number of bounces | bounce |
-| `pulse_count` | Number of pulses | pulse |
-| `intensity` | Animation intensity multiplier | pulse |
-
 ## API
 
 ```lua
@@ -745,35 +728,6 @@ vim.keymap.set("n", "n", function()
 end)
 ```
 
-#### Available Effects and Easing
-
-```lua
--- Available effects
-glimmer.effects = {
-  "fade",
-  "reverse_fade",
-  "bounce",
-  "left_to_right",
-  "pulse",
-  "rainbow",
-}
-
--- Available easing functions
-glimmer.easing = {
-  "linear",
-  "inQuad", "outQuad", "inOutQuad", "outInQuad",
-  "inCubic", "outCubic", "inOutCubic", "outInCubic",
-  "inQuart", "outQuart", "inOutQuart", "outInQuart",
-  "inQuint", "outQuint", "inOutQuint", "outInQuint",
-  "inSine", "outSine", "inOutSine", "outInSine",
-  "inExpo", "outExpo", "inOutExpo", "outInExpo",
-  "inCirc", "outCirc", "inOutCirc", "outInCirc",
-  "inElastic", "outElastic", "inOutElastic", "outInElastic",
-  "inBack", "outBack", "inOutBack", "outInBack",
-  "inBounce", "outBounce", "inOutBounce", "outInBounce",
-}
-```
-
 For more examples, see the [examples/](examples/) directory in the repository.
 
 ## Integrations
@@ -862,7 +816,7 @@ require("tiny-glimmer").setup({
             max_duration = 400,
             chars_for_max_duration = 10,
             custom_property = "value",
-            
+
             effect = function(self, progress)
                 -- Your animation logic here
                 return "#ff0000", progress

@@ -37,6 +37,14 @@ function LineAnimation.new(effect, opts)
     })
   end
 
+  -- Add loop options if provided
+  if opts.loop ~= nil then
+    animation_opts = vim.tbl_extend("force", animation_opts, {
+      loop = opts.loop,
+      loop_count = opts.loop_count or 0,
+    })
+  end
+
   self.animation = AnimationEffect.new(effect, animation_opts)
   self.reserved_ids = {}
 
@@ -65,7 +73,7 @@ local function apply_hl(self, line)
 end
 
 function LineAnimation:start(refresh_interval_ms, on_complete)
-  local length = self.animation.range.end_line - self.animation.range.start_line
+  local length = self.animation.range.end_line - self.animation.range.start_line + 1
 
   self.animation:start(refresh_interval_ms, length or 1, {
     on_update = function(update_progress)

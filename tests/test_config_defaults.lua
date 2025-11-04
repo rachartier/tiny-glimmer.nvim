@@ -23,9 +23,14 @@ T["defaults"]["has animations configuration"] = function()
   MiniTest.expect.equality(type(defaults.animations), "table")
 
   -- Check for required animations
-  local required_animations = { "fade", "reverse_fade", "bounce", "left_to_right", "pulse", "rainbow", "custom" }
+  local required_animations =
+    { "fade", "reverse_fade", "bounce", "left_to_right", "pulse", "rainbow", "custom" }
   for _, anim_name in ipairs(required_animations) do
-    MiniTest.expect.equality(type(defaults.animations[anim_name]), "table", "Missing animation: " .. anim_name)
+    MiniTest.expect.equality(
+      type(defaults.animations[anim_name]),
+      "table",
+      "Missing animation: " .. anim_name
+    )
   end
 end
 

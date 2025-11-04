@@ -35,6 +35,7 @@ function TextAnimation.new(effect, opts)
 
   local self = setmetatable({}, TextAnimation)
 
+  self.buffer = vim.api.nvim_get_current_buf()
   self.virtual_text_priority = opts.virtual_text_priority or 128
   self.event_type = opts.event and opts.event.regtype or vim.v.event.regtype
   self.operation = vim.v.event.operator
@@ -151,7 +152,7 @@ local function apply_hl(self, line)
     hl_group = hl_group,
     hl_mode = "blend",
     priority = self.virtual_text_priority,
-  })
+  }, self.buffer)
 end
 
 ---Starts the text animation
@@ -159,12 +160,18 @@ end
 ---@param on_complete function Callback function when animation is complete
 function TextAnimation:start(refresh_interval_ms, on_complete)
   local length = self.animation.range.end_col - self.animation.range.start_col
+  local buf = self.buffer
 
   self.animation:start(refresh_interval_ms, length, {
     on_update = function(update_progress)
+      -- Only update if buffer is still valid
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+      
       -- Clear previous animation state
       vim.api.nvim_buf_clear_namespace(
-        0,
+        buf,
         namespace,
         self.animation.range.start_line,
         self.animation.range.end_line + 1

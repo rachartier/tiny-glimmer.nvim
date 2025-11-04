@@ -88,14 +88,16 @@ function M.get_visual_range_yank()
   }
 end
 
-function M.set_extmark(line, ns_id, col, opts)
+function M.set_extmark(line, ns_id, col, opts, bufnr)
   line = math.max(0, line)
   col = math.max(0, col)
 
   opts = opts or {}
   opts.strict = false
+  
+  bufnr = bufnr or 0
 
-  return vim.api.nvim_buf_set_extmark(0, ns_id, line, col, opts)
+  return vim.api.nvim_buf_set_extmark(bufnr, ns_id, line, col, opts)
 end
 
 function M.clamp(value, min, max)

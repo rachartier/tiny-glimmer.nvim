@@ -78,7 +78,9 @@ function AnimationFactory:_prepare_animation_effect(buffer, animation_type, opts
     error("TinyGlimmer: Range is required in options")
   end
 
-  self.buffers[buffer] = self.buffers[buffer] or { animations = {}, named_animations = {} }
+  self.buffers[buffer] = self.buffers[buffer] or {}
+  self.buffers[buffer].animations = self.buffers[buffer].animations or {}
+  self.buffers[buffer].named_animations = self.buffers[buffer].named_animations or {}
 
   local anim_type = normalize_animation_type(animation_type)
   validate_animation_type(self.effect_pool, anim_type.name)
@@ -99,21 +101,40 @@ function AnimationFactory:_manage_animation(animation_obj, buffer, on_complete)
   end
 
   local animation = animation_obj.animation
+  if not animation or not animation.range or not animation.range.start_line then
+    error("TinyGlimmer: Invalid animation object - missing range or start_line")
+  end
+  
   local line_key = animation.range.start_line
 
+  -- Ensure buffer entry exists
+  if not self.buffers[buffer] then
+    self.buffers[buffer] = { animations = {}, named_animations = {} }
+  end
+  if not self.buffers[buffer].animations then
+    self.buffers[buffer].animations = {}
+  end
+
   -- Stop any existing animation on this line
-  if self.buffers[buffer].animations[line_key] then
-    self.buffers[buffer].animations[line_key]:stop()
+  local buf_data = self.buffers[buffer]
+  if buf_data and buf_data.animations and buf_data.animations[line_key] then
+    buf_data.animations[line_key]:stop()
   end
 
   -- Start new animation
-  self.buffers[buffer].animations[line_key] = animation_obj
-  animation_obj:start(self.animation_refresh, function()
-    self.buffers[buffer].animations[line_key] = nil
-    if on_complete then
-      on_complete()
-    end
-  end)
+  buf_data = self.buffers[buffer]
+  if buf_data and buf_data.animations then
+    buf_data.animations[line_key] = animation_obj
+    animation_obj:start(self.animation_refresh, function()
+      local buf_data_callback = self.buffers[buffer]
+      if buf_data_callback and buf_data_callback.animations then
+        buf_data_callback.animations[line_key] = nil
+      end
+      if on_complete then
+        on_complete()
+      end
+    end)
+  end
 end
 
 --- Manage animation lifecycle in a buffer
@@ -125,19 +146,34 @@ function AnimationFactory:_manage_named_animation(name, animation_obj, buffer, o
     error("TinyGlimmer: Failed to create animation")
   end
 
+  -- Ensure buffer entry exists
+  if not self.buffers[buffer] then
+    self.buffers[buffer] = { animations = {}, named_animations = {} }
+  end
+  if not self.buffers[buffer].named_animations then
+    self.buffers[buffer].named_animations = {}
+  end
+
   -- Stop any existing animation on this line
-  if self.buffers[buffer].named_animations[name] then
-    self.buffers[buffer].named_animations[name]:stop()
+  local buf_data = self.buffers[buffer]
+  if buf_data and buf_data.named_animations and buf_data.named_animations[name] then
+    buf_data.named_animations[name]:stop()
   end
 
   -- Start new animation
-  self.buffers[buffer].named_animations[name] = animation_obj
-  animation_obj:start(self.animation_refresh, function()
-    self.buffers[buffer].named_animations[name] = nil
-    if on_complete then
-      on_complete()
-    end
-  end)
+  buf_data = self.buffers[buffer]
+  if buf_data and buf_data.named_animations then
+    buf_data.named_animations[name] = animation_obj
+    animation_obj:start(self.animation_refresh, function()
+      local buf_data_callback = self.buffers[buffer]
+      if buf_data_callback and buf_data_callback.named_animations then
+        buf_data_callback.named_animations[name] = nil
+      end
+      if on_complete then
+        on_complete()
+      end
+    end)
+  end
 end
 
 --- Create and launch a text animation

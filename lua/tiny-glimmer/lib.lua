@@ -11,8 +11,8 @@ local M = {}
 
 local AnimationFactory = require("tiny-glimmer.animation.factory")
 local Effect = require("tiny-glimmer.animation.effect")
-local RangeUtils = require("tiny-glimmer.range_utils")
 local Helpers = require("tiny-glimmer.lib_helpers")
+local RangeUtils = require("tiny-glimmer.range_utils")
 
 ---@class AnimationRange
 ---@field start_line number 0-indexed start line
@@ -61,6 +61,12 @@ local function ensure_initialized()
 
   -- Load default effects
   default_effects = require("tiny-glimmer.premade_effects")
+
+  -- Ensure factory has effect_pool
+  local factory = AnimationFactory.get_instance()
+  if not factory.effect_pool or vim.tbl_isempty(factory.effect_pool) then
+    factory.effect_pool = default_effects
+  end
 
   initialized = true
 end
@@ -227,9 +233,14 @@ function M.create_named_animation(name, opts)
     factory:_prepare_animation_effect(buffer, animation_type, { base = { range = opts.range } })
   local animation = require("tiny-glimmer.animation.premade.text").new(
     effect,
-    { base = { range = opts.range }, on_complete = opts.on_complete, loop = opts.loop, loop_count = opts.loop_count }
+    {
+      base = { range = opts.range },
+      on_complete = opts.on_complete,
+      loop = opts.loop,
+      loop_count = opts.loop_count,
+    }
   )
-  factory:_manage_named_animation(name, animation, buffer)
+  factory:_manage_named_animation(name, animation, buffer, opts.on_complete)
 end
 
 --- Stop a named animation

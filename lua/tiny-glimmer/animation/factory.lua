@@ -86,7 +86,8 @@ end
 --- Manage animation lifecycle in a buffer
 --- @param animation_obj table Animation object
 --- @param buffer number Neovim buffer handle
-function AnimationFactory:_manage_animation(animation_obj, buffer)
+--- @param on_complete? function Optional callback when animation completes
+function AnimationFactory:_manage_animation(animation_obj, buffer, on_complete)
   if not animation_obj then
     error("TinyGlimmer: Failed to create animation")
   end
@@ -103,13 +104,17 @@ function AnimationFactory:_manage_animation(animation_obj, buffer)
   self.buffers[buffer].animations[line_key] = animation_obj
   animation_obj:start(self.animation_refresh, function()
     self.buffers[buffer].animations[line_key] = nil
+    if on_complete then
+      on_complete()
+    end
   end)
 end
 
 --- Manage animation lifecycle in a buffer
 --- @param animation_obj table Animation object
 --- @param buffer number Neovim buffer handle
-function AnimationFactory:_manage_named_animation(name, animation_obj, buffer)
+--- @param on_complete? function Optional callback when animation completes
+function AnimationFactory:_manage_named_animation(name, animation_obj, buffer, on_complete)
   if not animation_obj then
     error("TinyGlimmer: Failed to create animation")
   end
@@ -123,6 +128,9 @@ function AnimationFactory:_manage_named_animation(name, animation_obj, buffer)
   self.buffers[buffer].named_animations[name] = animation_obj
   animation_obj:start(self.animation_refresh, function()
     self.buffers[buffer].named_animations[name] = nil
+    if on_complete then
+      on_complete()
+    end
   end)
 end
 
@@ -133,7 +141,7 @@ function AnimationFactory:create_text_animation(animation_type, opts)
   local buffer = vim.api.nvim_get_current_buf()
   local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
   local animation = require("tiny-glimmer.animation.premade.text").new(effect, opts)
-  self:_manage_animation(animation, buffer)
+  self:_manage_animation(animation, buffer, opts.on_complete)
 end
 
 --- Create and launch a named text animation
@@ -144,7 +152,7 @@ function AnimationFactory:create_named_text_animation(name, animation_type, opts
   local buffer = vim.api.nvim_get_current_buf()
   local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
   local animation = require("tiny-glimmer.animation.premade.text").new(effect, opts)
-  self:_manage_named_animation(name, animation, buffer)
+  self:_manage_named_animation(name, animation, buffer, opts.on_complete)
 end
 
 --- Create and launch a line animation
@@ -154,7 +162,7 @@ function AnimationFactory:create_line_animation(animation_type, opts)
   local buffer = vim.api.nvim_get_current_buf()
   local effect = self:_prepare_animation_effect(buffer, animation_type, opts)
   local animation = require("tiny-glimmer.animation.premade.line").new(effect, opts)
-  self:_manage_animation(animation, buffer)
+  self:_manage_animation(animation, buffer, opts.on_complete)
 end
 
 return AnimationFactory

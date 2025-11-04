@@ -95,4 +95,13 @@ function M.get_pool_stats()
   }
 end
 
+---Resets the namespace pool to its initial state.
+---This is primarily intended for testing purposes.
+function M.reset_pool()
+  ns_pool.next_id = 1
+  ns_pool.free_ids = {}
+  ns_pool.used_ids = {}
+  ns_pool.last_free_index = 0
+end
+
 return M

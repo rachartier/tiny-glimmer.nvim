@@ -629,4 +629,113 @@ T["lib"]["effects list contains expected values"] = function()
   MiniTest.expect.equality(vim.tbl_contains(Lib.effects, "rainbow"), true)
 end
 
+-- Test Phase 1 features
+T["lib"]["get_word_range returns nil for empty buffer"] = function()
+  reset_state()
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {})
+  local range = Lib.get_word_range()
+  MiniTest.expect.equality(range, nil)
+end
+
+T["lib"]["get_word_range returns range for word"] = function()
+  reset_state()
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "hello world test" })
+  vim.api.nvim_win_set_cursor(0, { 1, 6 }) -- on "world"
+
+  local range = Lib.get_word_range()
+  MiniTest.expect.equality(type(range), "table")
+  MiniTest.expect.equality(range.start_line, 0)
+  MiniTest.expect.equality(range.end_line, 0)
+  -- Just verify we got a valid range with some columns
+  MiniTest.expect.equality(type(range.start_col), "number")
+  MiniTest.expect.equality(type(range.end_col), "number")
+  MiniTest.expect.equality(range.end_col > range.start_col, true)
+end
+
+T["lib"]["get_paragraph_range returns current paragraph"] = function()
+  reset_state()
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+    "line 1",
+    "line 2",
+    "",
+    "line 4",
+    "line 5",
+  })
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+
+  local range = Lib.get_paragraph_range()
+  MiniTest.expect.equality(type(range), "table")
+  MiniTest.expect.equality(range.start_line, 0)
+  MiniTest.expect.equality(range.start_col, 0)
+end
+
+T["lib"]["stop_all stops all animations"] = function()
+  reset_state()
+  ensure_factory_has_effects()
+  mock_buffer_api()
+  mock_animation_modules()
+
+  -- Create multiple named animations
+  Lib.create_named_animation("test1", {
+    range = { start_line = 0, start_col = 0, end_line = 0, end_col = 5 },
+    from_color = "#ff0000",
+    to_color = "#00ff00",
+  })
+
+  Lib.create_named_animation("test2", {
+    range = { start_line = 1, start_col = 0, end_line = 1, end_col = 5 },
+    from_color = "#ff0000",
+    to_color = "#00ff00",
+  })
+
+  local factory = AnimationFactory.get_instance()
+  MiniTest.expect.equality(type(factory.buffers[1].named_animations["test1"]), "table")
+  MiniTest.expect.equality(type(factory.buffers[1].named_animations["test2"]), "table")
+
+  -- Stop all
+  Lib.stop_all()
+
+  MiniTest.expect.equality(factory.buffers[1].named_animations["test1"], nil)
+  MiniTest.expect.equality(factory.buffers[1].named_animations["test2"], nil)
+
+  restore_buffer_api()
+end
+
+T["lib"]["animate_word animates word under cursor"] = function()
+  reset_state()
+  ensure_factory_has_effects()
+  mock_buffer_api()
+  mock_animation_modules()
+
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, { "hello world" })
+  vim.api.nvim_win_set_cursor(0, { 1, 6 })
+
+  MiniTest.expect.no_error(function()
+    Lib.animate_word("fade")
+  end)
+
+  restore_buffer_api()
+end
+
+T["lib"]["paragraph animates current paragraph"] = function()
+  reset_state()
+  ensure_factory_has_effects()
+  mock_buffer_api()
+  mock_animation_modules()
+
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, {
+    "line 1",
+    "line 2",
+    "",
+    "line 4",
+  })
+  vim.api.nvim_win_set_cursor(0, { 2, 0 })
+
+  MiniTest.expect.no_error(function()
+    Lib.paragraph("pulse")
+  end)
+
+  restore_buffer_api()
+end
+
 return T

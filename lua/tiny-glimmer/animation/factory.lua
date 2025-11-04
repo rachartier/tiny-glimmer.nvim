@@ -30,6 +30,16 @@ local function merge_settings(base_settings, overwrite_settings)
   return vim.tbl_extend("force", base_settings, overwrite_settings or {})
 end
 
+--- Normalize animation_type to table format
+---@param anim_type string|AnimationType Animation type (string or table)
+---@return AnimationType Normalized animation type table
+local function normalize_animation_type(anim_type)
+  if type(anim_type) == "string" then
+    return { name = anim_type, settings = {} }
+  end
+  return anim_type
+end
+
 --- Initialize the AnimationFactory singleton
 --- @param opts? AnimationFactorySettings Configuration options
 --- @param effect_pool? table Animation effect types
@@ -70,15 +80,11 @@ function AnimationFactory:_prepare_animation_effect(buffer, animation_type, opts
 
   self.buffers[buffer] = self.buffers[buffer] or { animations = {}, named_animations = {} }
 
-  local animation_name = type(animation_type) == "table" and animation_type.name or animation_type
+  local anim_type = normalize_animation_type(animation_type)
+  validate_animation_type(self.effect_pool, anim_type.name)
 
-  validate_animation_type(self.effect_pool, animation_name)
-
-  local effect = vim.deepcopy(self.effect_pool[animation_name])
-  effect.settings = merge_settings(
-    effect.settings,
-    type(animation_type) == "table" and animation_type.settings or {}
-  )
+  local effect = vim.deepcopy(self.effect_pool[anim_type.name])
+  effect.settings = merge_settings(effect.settings, anim_type.settings)
 
   return effect
 end

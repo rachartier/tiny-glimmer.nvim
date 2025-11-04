@@ -101,6 +101,7 @@ end
 
 T["lib"]["create_animation with minimal options"] = function()
   reset_state()
+  ensure_factory_has_effects()
   mock_buffer_api()
   mock_animation_modules()
 
@@ -322,6 +323,7 @@ end
 
 T["lib"]["create_named_animation with minimal options"] = function()
   reset_state()
+  ensure_factory_has_effects()
   mock_buffer_api()
   mock_animation_modules()
 
@@ -341,6 +343,7 @@ end
 
 T["lib"]["create_named_animation with custom effect"] = function()
   reset_state()
+  ensure_factory_has_effects()
   mock_buffer_api()
   mock_animation_modules()
 
@@ -359,6 +362,7 @@ end
 
 T["lib"]["create_named_animation with loop"] = function()
   reset_state()
+  ensure_factory_has_effects()
   mock_buffer_api()
   mock_animation_modules()
 
@@ -379,6 +383,7 @@ end
 -- Test stop_animation
 T["lib"]["stop_animation stops named animation"] = function()
   reset_state()
+  ensure_factory_has_effects()
   mock_buffer_api()
   mock_animation_modules()
 
@@ -400,6 +405,7 @@ end
 
 T["lib"]["stop_animation handles non-existent animation"] = function()
   reset_state()
+  ensure_factory_has_effects()
   mock_buffer_api()
 
   MiniTest.expect.no_error(function()

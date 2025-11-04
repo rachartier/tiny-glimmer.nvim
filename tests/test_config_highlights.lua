@@ -105,8 +105,14 @@ T["sanitize_highlights"]["handles preset default_animation as table"] = function
 
   highlights.sanitize_highlights(config)
 
-  MiniTest.expect.equality(type(config.presets.test_preset.default_animation.settings.from_color), "string")
-  MiniTest.expect.equality(type(config.presets.test_preset.default_animation.settings.to_color), "string")
+  MiniTest.expect.equality(
+    type(config.presets.test_preset.default_animation.settings.from_color),
+    "string"
+  )
+  MiniTest.expect.equality(
+    type(config.presets.test_preset.default_animation.settings.to_color),
+    "string"
+  )
 end
 
 return T

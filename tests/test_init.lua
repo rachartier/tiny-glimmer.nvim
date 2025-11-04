@@ -1,5 +1,5 @@
-local MiniTest = require("mini.test")
 local H = require("tests.helpers")
+local MiniTest = require("mini.test")
 
 local T = MiniTest.new_set()
 
@@ -51,9 +51,18 @@ T["setup"]["loads API methods"] = function()
 
   -- Check all API methods are loaded
   local api_methods = {
-    "enable", "disable", "toggle", "change_hl", "get_background_hl",
-    "search_next", "search_prev", "search_under_cursor",
-    "paste", "Paste", "undo", "redo"
+    "enable",
+    "disable",
+    "toggle",
+    "change_hl",
+    "get_background_hl",
+    "search_next",
+    "search_prev",
+    "search_under_cursor",
+    "paste",
+    "Paste",
+    "undo",
+    "redo",
   }
 
   for _, method in ipairs(api_methods) do

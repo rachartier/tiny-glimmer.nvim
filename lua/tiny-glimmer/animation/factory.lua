@@ -36,7 +36,6 @@ end
 --- @param animation_refresh? number Animation refresh rate in ms
 function AnimationFactory.initialize(opts, effect_pool, animation_refresh)
   if AnimationFactory.instance then
-    vim.notify("TinyGlimmer: AnimationFactory already initialized", vim.log.levels.WARN)
     return AnimationFactory.instance
   end
 

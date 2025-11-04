@@ -11,7 +11,8 @@ local M = {}
 
 local AnimationFactory = require("tiny-glimmer.animation.factory")
 local Effect = require("tiny-glimmer.animation.effect")
-local utils = require("tiny-glimmer.utils")
+local RangeUtils = require("tiny-glimmer.range_utils")
+local Helpers = require("tiny-glimmer.lib_helpers")
 
 ---@class AnimationRange
 ---@field start_line number 0-indexed start line
@@ -68,11 +69,7 @@ end
 ---@param color string Color hex or highlight group name
 ---@return string hex_color
 local function normalize_color(color)
-  if color:match("^#") then
-    return color
-  end
-  -- It's a highlight group
-  return utils.int_to_hex(utils.get_highlight(color).bg or 0)
+  return Helpers.normalize_color(color)
 end
 
 --- Create a custom effect
@@ -252,69 +249,26 @@ end
 --- Get current cursor position as a range
 ---@return AnimationRange
 function M.get_cursor_range()
-  local pos = vim.api.nvim_win_get_cursor(0)
-  return {
-    start_line = pos[1] - 1,
-    start_col = pos[2],
-    end_line = pos[1] - 1,
-    end_col = pos[2] + 1,
-  }
+  return RangeUtils.get_cursor_range()
 end
 
 --- Get current visual selection as a range
 ---@return AnimationRange|nil
 function M.get_visual_range()
-  local start_pos = vim.fn.getpos("'<")
-  local end_pos = vim.fn.getpos("'>")
-
-  if start_pos[2] == 0 or end_pos[2] == 0 then
-    return nil
-  end
-
-  return {
-    start_line = start_pos[2] - 1,
-    start_col = start_pos[3] - 1,
-    end_line = end_pos[2] - 1,
-    end_col = end_pos[3],
-  }
+  return RangeUtils.get_visual_range()
 end
 
 --- Get the range for a specific line
 ---@param line number 1-indexed line number (0 for current line)
 ---@return AnimationRange
 function M.get_line_range(line)
-  line = line or 0
-  if line == 0 then
-    line = vim.api.nvim_win_get_cursor(0)[1]
-  end
-
-  local buffer = vim.api.nvim_get_current_buf()
-  local line_content = vim.api.nvim_buf_get_lines(buffer, line - 1, line, false)[1] or ""
-
-  return {
-    start_line = line - 1,
-    start_col = 0,
-    end_line = line - 1,
-    end_col = #line_content,
-  }
+  return RangeUtils.get_line_range(line)
 end
 
 --- Get the yank range from the last yank operation
 ---@return AnimationRange|nil
 function M.get_yank_range()
-  local start_pos = vim.fn.getpos("'[")
-  local end_pos = vim.fn.getpos("']")
-
-  if start_pos[2] == 0 or end_pos[2] == 0 then
-    return nil
-  end
-
-  return {
-    start_line = start_pos[2] - 1,
-    start_col = start_pos[3] - 1,
-    end_line = end_pos[2] - 1,
-    end_col = end_pos[3],
-  }
+  return RangeUtils.get_yank_range()
 end
 
 --- Helper: Animate cursor line with an effect
@@ -322,34 +276,14 @@ end
 ---@param opts? table Optional settings override
 function M.cursor_line(effect, opts)
   ensure_initialized()
-  
-  -- Check if plugin is enabled
-  local config = require("tiny-glimmer").config
-  if config and not config.enabled then
+
+  if not Helpers.check_enabled() then
     return
   end
-  
+
   opts = opts or {}
-  local effect_name, effect_settings
-  
-  if type(effect) == "table" then
-    effect_name = effect.name
-    effect_settings = effect.settings or {}
-  else
-    effect_name = effect
-    effect_settings = {}
-  end
-  
-  local factory = AnimationFactory.get_instance()
-  
-  -- Get effect from pool
-  if not factory.effect_pool[effect_name] then
-    error("TinyGlimmer: Unknown effect: " .. effect_name)
-  end
-  
-  local base_settings = factory.effect_pool[effect_name].settings or {}
-  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
-  
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
   M.create_line_animation({
     range = M.get_line_range(0),
     duration = merged_settings.max_duration or 300,
@@ -367,39 +301,19 @@ end
 ---@param opts? table Optional settings override
 function M.visual_selection(effect, opts)
   ensure_initialized()
-  
-  -- Check if plugin is enabled
-  local config = require("tiny-glimmer").config
-  if config and not config.enabled then
+
+  if not Helpers.check_enabled() then
     return
   end
-  
+
   local range = M.get_visual_range()
   if not range then
     return
   end
-  
+
   opts = opts or {}
-  local effect_name, effect_settings
-  
-  if type(effect) == "table" then
-    effect_name = effect.name
-    effect_settings = effect.settings or {}
-  else
-    effect_name = effect
-    effect_settings = {}
-  end
-  
-  local factory = AnimationFactory.get_instance()
-  
-  -- Get effect from pool
-  if not factory.effect_pool[effect_name] then
-    error("TinyGlimmer: Unknown effect: " .. effect_name)
-  end
-  
-  local base_settings = factory.effect_pool[effect_name].settings or {}
-  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
-  
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
   M.create_text_animation({
     range = range,
     duration = merged_settings.max_duration or 300,
@@ -416,34 +330,14 @@ end
 ---@param opts? table Optional settings override
 function M.animate_range(effect, range, opts)
   ensure_initialized()
-  
-  -- Check if plugin is enabled
-  local config = require("tiny-glimmer").config
-  if config and not config.enabled then
+
+  if not Helpers.check_enabled() then
     return
   end
-  
+
   opts = opts or {}
-  local effect_name, effect_settings
-  
-  if type(effect) == "table" then
-    effect_name = effect.name
-    effect_settings = effect.settings or {}
-  else
-    effect_name = effect
-    effect_settings = {}
-  end
-  
-  local factory = AnimationFactory.get_instance()
-  
-  -- Get effect from pool
-  if not factory.effect_pool[effect_name] then
-    error("TinyGlimmer: Unknown effect: " .. effect_name)
-  end
-  
-  local base_settings = factory.effect_pool[effect_name].settings or {}
-  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
-  
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
   M.create_text_animation({
     range = range,
     duration = merged_settings.max_duration or 300,
@@ -461,34 +355,14 @@ end
 ---@param opts? table Optional settings override
 function M.named_animate_range(name, effect, range, opts)
   ensure_initialized()
-  
-  -- Check if plugin is enabled
-  local config = require("tiny-glimmer").config
-  if config and not config.enabled then
+
+  if not Helpers.check_enabled() then
     return
   end
-  
+
   opts = opts or {}
-  local effect_name, effect_settings
-  
-  if type(effect) == "table" then
-    effect_name = effect.name
-    effect_settings = effect.settings or {}
-  else
-    effect_name = effect
-    effect_settings = {}
-  end
-  
-  local factory = AnimationFactory.get_instance()
-  
-  -- Get effect from pool
-  if not factory.effect_pool[effect_name] then
-    error("TinyGlimmer: Unknown effect: " .. effect_name)
-  end
-  
-  local base_settings = factory.effect_pool[effect_name].settings or {}
-  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
-  
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
   M.create_named_animation(name, {
     range = range,
     duration = merged_settings.max_duration or 300,

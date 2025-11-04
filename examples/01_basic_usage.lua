@@ -7,12 +7,11 @@ end)
 
 -- Animate cursor character
 vim.keymap.set("n", "<leader>ac", function()
-  glimmer.animate_range("fade", glimmer.get_cursor_range())
-end)
+  local r = glimmer.get_cursor_range()
 
--- Animate visual selection
-vim.keymap.set("v", "<leader>av", function()
-  glimmer.visual_selection("fade")
+  r.end_col = r.start_col + 2
+
+  glimmer.animate_range("fade", r)
 end)
 
 -- Different effects

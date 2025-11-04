@@ -21,6 +21,12 @@ A Neovim plugin that adds smooth, customizable animations to text operations lik
 - [Examples](#examples)
 - [API](#api)
   - [Commands](#commands)
+- [Library API](#library-api)
+  - [Quick Start](#quick-start)
+  - [Core Functions](#core-functions)
+  - [Helper Functions](#helper-functions)
+  - [Range Utilities](#range-utilities)
+  - [Advanced Usage](#advanced-usage)
 - [Integrations](#integrations)
 - [FAQ](#faq)
 - [Acknowledgments](#acknowledgments)
@@ -381,6 +387,394 @@ vim.keymap.set("n", "<leader>ge", "<cmd>TinyGlimmer enable<cr>", { desc = "Enabl
 vim.keymap.set("n", "<leader>gd", "<cmd>TinyGlimmer disable<cr>", { desc = "Disable animations" })
 vim.keymap.set("n", "<leader>gt", "<cmd>TinyGlimmer fade<cr>", { desc = "Switch to fade" })
 ```
+
+## Library API
+
+The `tiny-glimmer.lib` module provides a low-level API for creating custom animations programmatically. This is useful for integrating animations into your own plugins or creating custom keybindings.
+
+### Quick Start
+
+```lua
+local glimmer = require("tiny-glimmer.lib")
+
+-- Animate current line with fade effect
+vim.keymap.set("n", "<leader>al", function()
+  glimmer.cursor_line("fade")
+end)
+
+-- Animate visual selection
+vim.keymap.set("v", "<leader>av", function()
+  glimmer.visual_selection("pulse")
+end)
+
+-- Create custom animation on specific range
+vim.keymap.set("n", "<leader>ac", function()
+  glimmer.create_animation({
+    range = glimmer.get_line_range(0),
+    duration = 500,
+    from_color = "#ff0000",
+    to_color = "#00ff00",
+    effect = "fade",
+  })
+end)
+```
+
+### Core Functions
+
+#### `create_animation(opts)`
+
+Create a simple text animation with full control over parameters.
+
+```lua
+glimmer.create_animation({
+  range = {
+    start_line = 0,      -- 0-indexed start line
+    start_col = 0,       -- 0-indexed start column
+    end_line = 0,        -- 0-indexed end line
+    end_col = 10,        -- 0-indexed end column
+  },
+  duration = 300,        -- Animation duration in ms
+  from_color = "#ff0000",  -- Start color (hex or highlight group)
+  to_color = "#00ff00",    -- End color (hex or highlight group)
+  effect = "fade",       -- Effect type (fade, pulse, bounce, etc.)
+  easing = "outQuad",    -- Easing function (optional)
+  on_complete = function()  -- Callback when done (optional)
+    print("Animation complete!")
+  end,
+  loop = false,          -- Whether to loop (optional)
+  loop_count = 1,        -- Number of loops, 0 = infinite (optional)
+})
+```
+
+**Parameters:**
+- `range` (AnimationRange, required) - Text range to animate
+- `duration` (number, required) - Animation duration in milliseconds
+- `from_color` (string, required) - Start color (hex color or highlight group name)
+- `to_color` (string, required) - End color (hex color or highlight group name)
+- `effect` (string, optional) - Effect type, defaults to "fade"
+- `easing` (string, optional) - Easing function, defaults to "linear"
+- `on_complete` (function, optional) - Callback when animation completes
+- `loop` (boolean, optional) - Whether to loop the animation
+- `loop_count` (number, optional) - Number of times to loop (0 = infinite)
+
+#### `create_line_animation(opts)`
+
+Create a line-based animation that highlights entire lines (ignores column positions).
+
+```lua
+glimmer.create_line_animation({
+  range = glimmer.get_line_range(1),
+  duration = 400,
+  from_color = "DiffAdd",
+  to_color = "Normal",
+  effect = "pulse",
+})
+```
+
+Parameters are the same as `create_animation()`, but `start_col` and `end_col` are ignored.
+
+#### `create_text_animation(opts)`
+
+Alias for `create_animation()` that highlights specific character ranges.
+
+#### `create_named_animation(name, opts)`
+
+Create a named animation that can be stopped later using its name.
+
+```lua
+-- Start an infinite rainbow effect
+glimmer.create_named_animation("rainbow_loop", {
+  range = glimmer.get_line_range(0),
+  duration = 1000,
+  from_color = "#ff0000",
+  to_color = "#00ff00",
+  effect = "rainbow",
+  loop = true,
+  loop_count = 0,  -- Infinite
+})
+
+-- Stop it later
+vim.keymap.set("n", "<leader>x", function()
+  glimmer.stop_animation("rainbow_loop")
+end)
+```
+
+**Parameters:**
+- `name` (string, required) - Unique identifier for this animation
+- `opts` (table, required) - Same options as `create_animation()`
+
+#### `stop_animation(name)`
+
+Stop a named animation.
+
+```lua
+glimmer.stop_animation("my_animation_name")
+```
+
+#### `create_effect(opts)`
+
+Create a custom effect with your own update function.
+
+```lua
+local effect = glimmer.create_effect({
+  settings = {
+    max_duration = 500,
+    min_duration = 300,
+    chars_for_max_duration = 10,
+    custom_color = "#ff00ff",
+  },
+  update_fn = function(self, progress)
+    -- Return color and progress for current frame
+    -- progress is between 0 and 1
+    local alpha = math.floor(progress * 255)
+    local color = string.format("#%02x00ff", alpha)
+    return color, progress
+  end,
+  builder = function(self)
+    -- Optional: Build initial data
+    return { initial_state = true }
+  end,
+})
+```
+
+### Helper Functions
+
+Convenience functions for common animation patterns.
+
+#### `cursor_line(effect, opts)`
+
+Animate the current cursor line.
+
+```lua
+-- Simple usage
+glimmer.cursor_line("pulse")
+
+-- With custom settings
+glimmer.cursor_line("fade", {
+  max_duration = 600,
+  from_color = "#ff0000",
+  loop = true,
+  loop_count = 3,
+})
+
+-- With effect configuration
+glimmer.cursor_line({
+  name = "pulse",
+  settings = {
+    max_duration = 800,
+    pulse_count = 3,
+  }
+})
+```
+
+#### `visual_selection(effect, opts)`
+
+Animate the current visual selection.
+
+```lua
+vim.keymap.set("v", "<leader>v", function()
+  glimmer.visual_selection("bounce", {
+    max_duration = 500,
+  })
+end)
+```
+
+#### `animate_range(effect, range, opts)`
+
+Animate a specific range with an effect.
+
+```lua
+local range = {
+  start_line = 5,
+  start_col = 0,
+  end_line = 10,
+  end_col = 20,
+}
+glimmer.animate_range("fade", range, {
+  from_color = "DiffDelete",
+  to_color = "Normal",
+})
+```
+
+#### `named_animate_range(name, effect, range, opts)`
+
+Create a named animation for a specific range.
+
+```lua
+glimmer.named_animate_range("highlight_1", "rainbow", glimmer.get_line_range(5), {
+  loop = true,
+  loop_count = 0,
+})
+
+-- Stop it later
+glimmer.stop_animation("highlight_1")
+```
+
+### Range Utilities
+
+Functions to get text ranges from various sources.
+
+#### `get_cursor_range()`
+
+Get the range of the current cursor position (single character).
+
+```lua
+local range = glimmer.get_cursor_range()
+-- Returns: { start_line = 0, start_col = 5, end_line = 0, end_col = 6 }
+```
+
+#### `get_visual_range()`
+
+Get the range of the current visual selection.
+
+```lua
+-- In visual mode
+local range = glimmer.get_visual_range()
+if range then
+  glimmer.animate_range("fade", range)
+end
+```
+
+Returns `nil` if no visual selection exists.
+
+#### `get_line_range(line)`
+
+Get the range for a specific line.
+
+```lua
+-- Get current line (0 or nil)
+local current_line = glimmer.get_line_range(0)
+
+-- Get line 5 (1-indexed)
+local line_5 = glimmer.get_line_range(5)
+```
+
+**Parameters:**
+- `line` (number) - 1-indexed line number, or 0 for current line
+
+#### `get_yank_range()`
+
+Get the range from the last yank operation.
+
+```lua
+local range = glimmer.get_yank_range()
+if range then
+  glimmer.animate_range("pulse", range)
+end
+```
+
+Returns `nil` if no yank operation has occurred.
+
+### Advanced Usage
+
+#### Looping Animations
+
+```lua
+-- Loop 3 times
+glimmer.create_animation({
+  range = glimmer.get_line_range(0),
+  duration = 200,
+  from_color = "#ff0000",
+  to_color = "#00ff00",
+  loop = true,
+  loop_count = 3,
+  on_complete = function()
+    print("Looped 3 times!")
+  end,
+})
+
+-- Infinite loop (must be named to stop)
+glimmer.create_named_animation("infinite", {
+  range = glimmer.get_line_range(0),
+  duration = 500,
+  from_color = "Visual",
+  to_color = "Normal",
+  effect = "pulse",
+  loop = true,
+  loop_count = 0,  -- 0 = infinite
+})
+
+-- Stop it when done
+vim.defer_fn(function()
+  glimmer.stop_animation("infinite")
+end, 5000)
+```
+
+#### Multiple Animations
+
+```lua
+-- Animate multiple lines at once
+vim.keymap.set("n", "<leader>am", function()
+  local start_line = vim.api.nvim_win_get_cursor(0)[1]
+  for i = 0, 4 do
+    glimmer.create_line_animation({
+      range = glimmer.get_line_range(start_line + i),
+      duration = 300 + (i * 50),  -- Stagger durations
+      from_color = "#ff0000",
+      to_color = "#00ff00",
+      effect = "fade",
+    })
+  end
+end)
+```
+
+#### Custom Autocmd Integration
+
+```lua
+-- Animate on buffer write
+vim.api.nvim_create_autocmd("BufWritePost", {
+  callback = function()
+    glimmer.cursor_line("pulse", {
+      max_duration = 300,
+      from_color = "DiffAdd",
+    })
+  end,
+})
+
+-- Animate search results
+vim.keymap.set("n", "n", function()
+  vim.cmd("normal! n")
+  local pos = vim.api.nvim_win_get_cursor(0)
+  glimmer.create_animation({
+    range = glimmer.get_cursor_range(),
+    duration = 400,
+    from_color = "IncSearch",
+    to_color = "Normal",
+    effect = "pulse",
+  })
+end)
+```
+
+#### Available Effects and Easing
+
+```lua
+-- Available effects
+glimmer.effects = {
+  "fade",
+  "reverse_fade",
+  "bounce",
+  "left_to_right",
+  "pulse",
+  "rainbow",
+}
+
+-- Available easing functions
+glimmer.easing = {
+  "linear",
+  "inQuad", "outQuad", "inOutQuad", "outInQuad",
+  "inCubic", "outCubic", "inOutCubic", "outInCubic",
+  "inQuart", "outQuart", "inOutQuart", "outInQuart",
+  "inQuint", "outQuint", "inOutQuint", "outInQuint",
+  "inSine", "outSine", "inOutSine", "outInSine",
+  "inExpo", "outExpo", "inOutExpo", "outInExpo",
+  "inCirc", "outCirc", "inOutCirc", "outInCirc",
+  "inElastic", "outElastic", "inOutElastic", "outInElastic",
+  "inBack", "outBack", "inOutBack", "outInBack",
+  "inBounce", "outBounce", "inOutBounce", "outInBounce",
+}
+```
+
+For more examples, see the [examples/](examples/) directory in the repository.
 
 ## Integrations
 

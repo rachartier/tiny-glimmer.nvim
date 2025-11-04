@@ -10,7 +10,9 @@ A Neovim plugin that adds smooth, customizable animations to text operations lik
 > This plugin is still in beta. Breaking changes may occur in future updates.
 
 
-https://github.com/user-attachments/assets/bf61855b-12ae-4c07-bcbd-908045f0741a
+
+https://github.com/user-attachments/assets/745cb1e3-9904-4718-9804-ac0a4fee8748
+
 
 
 ## Table of Contents

@@ -1,18 +1,83 @@
 # 🌟 tiny-glimmer.nvim
 
-A tiny Neovim plugin that adds subtle animations to various operations.
+[![Neovim](https://img.shields.io/badge/Neovim-0.10+-blue.svg)](https://neovim.io/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/rachartier/tiny-glimmer.nvim)](https://github.com/rachartier/tiny-glimmer.nvim/stargazers)
 
-**Do not forget to enable animations on operations you want to animate ! A lot of operations are disabled by default.**
-
-![Neovim version](https://img.shields.io/badge/Neovim-0.10+-blueviolet.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+A Neovim plugin that adds smooth, customizable animations to text operations like yank, paste, search, undo/redo, and more.
 
 > [!WARNING]
->This plugin is still in beta. It is possible that some changes will break the plugin.
+> This plugin is still in beta. Breaking changes may occur in future updates.
 
-## ✨ Features
+## Table of Contents
 
-### Some animations
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Built-in Animation Styles](#built-in-animation-styles)
+  - [Easing Functions](#easing-functions)
+  - [Animation Settings](#animation-settings)
+- [Examples](#examples)
+- [API](#api)
+  - [Commands](#commands)
+- [Integrations](#integrations)
+- [FAQ](#faq)
+- [Acknowledgments](#acknowledgments)
+
+## Features
+
+**Smooth animations for various operations:**
+- Yank and paste
+- Search navigation
+- Undo/redo operations
+- Custom operations support
+
+**Built-in animation styles:**
+- `fade` - Smooth fade in/out transition
+- `reverse_fade` - Reverse fade effect with outBack easing
+- `bounce` - Bouncing highlight effect
+- `left_to_right` - Linear left-to-right sweep
+- `pulse` - Pulsating highlight
+- `rainbow` - Rainbow color transition
+- `custom` - Define your own animation logic
+
+> [!NOTE]
+> Many operations are disabled by default. Enable the animations you want to use in your configuration.
+
+## Requirements
+
+- Neovim >= 0.10
+
+## Installation
+
+### Lazy.nvim
+
+```lua
+{
+    "rachartier/tiny-glimmer.nvim",
+    event = "VeryLazy",
+    priority = 10, -- Low priority to catch other plugins' keybindings
+    config = function()
+        require("tiny-glimmer").setup()
+    end,
+}
+```
+
+### Packer.nvim
+
+```lua
+use {
+    "rachartier/tiny-glimmer.nvim",
+    config = function()
+        require("tiny-glimmer").setup()
+    end
+}
+```
+
+## Examples
+
+### Some Animations
 https://github.com/user-attachments/assets/1bb98834-25d2-4f01-882f-609bec1cbe5c
 
 ### Yank & Paste Overwrite
@@ -21,179 +86,103 @@ https://github.com/user-attachments/assets/1578d19f-f245-4593-a28f-b7e9593cbc68
 ### Search Overwrite
 https://github.com/user-attachments/assets/6bc98a8f-8b7e-4b57-958a-74ad5372612f
 
-### Undo/Redo support
+### Undo/Redo Support
 https://github.com/user-attachments/assets/5938e28c-2ff3-4e97-8707-67c24e61895c
 
+## Configuration
 
-
-- Smooth animations for various operations:
-  - Yank and paste
-  - Search navigation
-  - Undo/redo operations
-  - Custom operations support
-
-Built-in animation styles:
-- `fade`: Smooth fade in/out transition
-- `reverse_fade`: Reverse fade effect with outBack easing
-- `bounce`: Bouncing highlight effect
-- `left_to_right`: Linear left-to-right sweep
-- `pulse`: Pulsating highlight
-- `rainbow`: Rainbow color transition
-- `custom`: Define your own animation logic
-
-
-## 📋 Requirements
-
-- Neovim >= 0.10
-
-## 📦 Installation
-
-Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 ```lua
-{
-    "rachartier/tiny-glimmer.nvim",
-    event = "VeryLazy",
-    priority = 10, -- Needs to be a really low priority, to catch others plugins keybindings.
-    opts = {
-        -- your configuration
-    },
-}
-```
-
-Using [packer.nvim](https://github.com/wbthomason/packer.nvim):
-```lua
-use {
-    'rachartier/tiny-glimmer.nvim',
-    config = function()
-        require('tiny-glimmer').setup()
-    end
-}
-```
-
-## ⚙️ Configuration
-
-Here's the default configuration:
-```lua
-require('tiny-glimmer').setup({
+require("tiny-glimmer").setup({
+    -- Enable/disable the plugin
     enabled = true,
 
-    -- Disable this if you wants to debug highlighting issues
+    -- Disable warnings for debugging highlight issues
     disable_warnings = true,
 
+    -- Animation refresh rate in milliseconds
     refresh_interval_ms = 8,
 
+    -- Automatic keybinding overwrites
     overwrite = {
         -- Automatically map keys to overwrite operations
-        -- If set to false, you will need to call the API functions to trigger the animations
-        -- WARN: You should disable this if you have already mapped these keys
-        --        or if you want to use the API functions to trigger the animations
+        -- Set to false if you have custom mappings or prefer manual API calls
         auto_map = true,
 
-        -- For search and paste, you can easily modify the animation to suit your needs
-        -- For example you can set a table to default_animation with custom parameters:
-        -- default_animation = {
-        --     name = "fade",
-        --
-        --     settings = {
-        --         max_duration = 1000,
-        --         min_duration = 1000,
-        --
-        --         from_color = "DiffDelete",
-        --         to_color = "Normal",
-        --     },
-        -- },
-        -- settings needs to respect the animation you choose settings
-        --
-        -- All "mapping" needs to have a correct lhs.
-        -- It will try to automatically use what you already defined before.
+        -- Yank operation animation
         yank = {
-              enabled = true,
-              default_animation = "fade",
+            enabled = true,
+            default_animation = "fade",
         },
+
+        -- Search navigation animation
         search = {
             enabled = false,
             default_animation = "pulse",
-
-            -- Keys to navigate to the next match
-            next_mapping = "n",
-
-            -- Keys to navigate to the previous match
-            prev_mapping = "N",
+            next_mapping = "n",      -- Key for next match
+            prev_mapping = "N",      -- Key for previous match
         },
+
+        -- Paste operation animation
         paste = {
             enabled = true,
             default_animation = "reverse_fade",
-
-            -- Keys to paste
-            paste_mapping = "p",
-
-            -- Keys to paste above the cursor
-            Paste_mapping = "P",
+            paste_mapping = "p",     -- Paste after cursor
+            Paste_mapping = "P",     -- Paste before cursor
         },
+
+        -- Undo operation animation
         undo = {
             enabled = false,
-
             default_animation = {
                 name = "fade",
-
                 settings = {
-                  from_color = "DiffDelete",
-
-                  max_duration = 500,
-                  min_duration = 500,
-                },
-            },
-            undo_mapping = "u",
-        },
-        redo = {
-            enabled = false,
-
-            default_animation = {
-                name = "fade",
-
-                settings = {
-                    from_color = "DiffAdd",
-
+                    from_color = "DiffDelete",
                     max_duration = 500,
                     min_duration = 500,
                 },
             },
+            undo_mapping = "u",
+        },
 
+        -- Redo operation animation
+        redo = {
+            enabled = false,
+            default_animation = {
+                name = "fade",
+                settings = {
+                    from_color = "DiffAdd",
+                    max_duration = 500,
+                    min_duration = 500,
+                },
+            },
             redo_mapping = "<c-r>",
         },
     },
 
+    -- Third-party plugin integrations
     support = {
-        -- Enable support for gbprod/substitute.nvim
-        -- You can use it like so:
-        -- require("substitute").setup({
+        -- Support for gbprod/substitute.nvim
+        -- Usage: require("substitute").setup({
         --     on_substitute = require("tiny-glimmer.support.substitute").substitute_cb,
-        --     highlight_substituted_text = {
-        --         enabled = false,
-        --     },
-        --})
+        --     highlight_substituted_text = { enabled = false },
+        -- })
         substitute = {
             enabled = false,
-
-            -- Can also be a table. Refer to overwrite.search for more information
             default_animation = "fade",
         },
     },
 
-    -- Animations for other operations
+    -- Special animation presets
     presets = {
-        -- Enable animation on cursorline when an event in `on_events` is triggered
-        -- Similar to `pulsar.el`
+        -- Pulsar-style cursor highlighting on specific events
         pulsar = {
             enabled = false,
             on_events = { "CursorMoved", "CmdlineEnter", "WinEnter" },
             default_animation = {
                 name = "fade",
-
                 settings = {
                     max_duration = 1000,
                     min_duration = 1000,
-
                     from_color = "DiffDelete",
                     to_color = "Normal",
                 },
@@ -201,18 +190,18 @@ require('tiny-glimmer').setup({
         },
     },
 
-    -- Only use if you have a transparent background
-    -- It will override the highlight group background color for `to_color` in all animations
+    -- Override background color for animations (for transparent backgrounds)
     transparency_color = nil,
-     -- Animation configurations
+
+    -- Animation configurations
     animations = {
         fade = {
-            max_duration = 400,
-            min_duration = 300,
-            easing = "outQuad",
-            chars_for_max_duration = 10,
-            from_color = "Visual", -- Highlight group or hex color
-            to_color = "Normal", -- Same as above
+            max_duration = 400,              -- Maximum animation duration in ms
+            min_duration = 300,              -- Minimum animation duration in ms
+            easing = "outQuad",              -- Easing function
+            chars_for_max_duration = 10,    -- Character count for max duration
+            from_color = "Visual",           -- Start color (highlight group or hex)
+            to_color = "Normal",             -- End color (highlight group or hex)
         },
         reverse_fade = {
             max_duration = 380,
@@ -226,7 +215,7 @@ require('tiny-glimmer').setup({
             max_duration = 500,
             min_duration = 400,
             chars_for_max_duration = 20,
-            oscillation_count = 1,
+            oscillation_count = 1,          -- Number of bounces
             from_color = "Visual",
             to_color = "Normal",
         },
@@ -235,7 +224,7 @@ require('tiny-glimmer').setup({
             min_duration = 350,
             min_progress = 0.85,
             chars_for_max_duration = 25,
-            lingering_time = 50,
+            lingering_time = 50,            -- Time to linger after completion
             from_color = "Visual",
             to_color = "Normal",
         },
@@ -243,8 +232,8 @@ require('tiny-glimmer').setup({
             max_duration = 600,
             min_duration = 400,
             chars_for_max_duration = 15,
-            pulse_count = 2,
-            intensity = 1.2,
+            pulse_count = 2,                -- Number of pulses
+            intensity = 1.2,                -- Pulse intensity
             from_color = "Visual",
             to_color = "Normal",
         },
@@ -252,51 +241,52 @@ require('tiny-glimmer').setup({
             max_duration = 600,
             min_duration = 350,
             chars_for_max_duration = 20,
+            -- Note: Rainbow animation does not use from_color/to_color
         },
 
-        -- You can add as many animations as you want
+        -- Custom animation example
         custom = {
-            -- You can also add as many custom options as you want
-            -- Only `max_duration` and `chars_for_max_duration` is required
             max_duration = 350,
             chars_for_max_duration = 40,
-
-            color = hl_visual_bg,
+            color = "#ff0000",  -- Custom property
 
             -- Custom effect function
-            -- @param self table The effect object
-            -- @param progress number The progress of the animation [0, 1]
-            --
-            -- Should return a color and a progress value
-            -- that represents how much of the animation should be drawn
-            -- self.settings represents the settings of the animation that you defined above
+            -- @param self table - The effect object with settings
+            -- @param progress number - Animation progress [0, 1]
+            -- @return string color - Hex color or highlight group
+            -- @return number progress - How much of the animation to draw
             effect = function(self, progress)
                 return self.settings.color, progress
             end,
         },
-        hijack_ft_disabled = {
-            "alpha",
-            "snacks_dashboard",
-        },
     },
+
+    -- Filetypes to disable hijacking/overwrites
+    hijack_ft_disabled = {
+        "alpha",
+        "snacks_dashboard",
+    },
+
+    -- Virtual text display priority
     virt_text = {
-        priority = 2048,
+        priority = 2048,  -- Higher values appear above other plugins
     },
 })
 ```
 
-For each animation, you can configure the `from_color` and `to_color` options to customize the colors used in the animation. These options should be valid highlight group names, or hexadecimal colors.
+### Built-in Animation Styles
 
-Example:
+Each animation can be customized with `from_color` and `to_color` options using highlight group names or hex colors:
+
 ```lua
-require('tiny-glimmer').setup({
+require("tiny-glimmer").setup({
     animations = {
         fade = {
-            from_color = "DiffDelete",
+            from_color = "DiffDelete",  -- Highlight group
             to_color = "DiffAdd",
         },
         bounce = {
-            from_color = "#ff0000",
+            from_color = "#ff0000",     -- Hex color
             to_color = "#00ff00",
         },
     },
@@ -304,120 +294,223 @@ require('tiny-glimmer').setup({
 ```
 
 > [!WARNING]
-Only `rainbow` animation does not uses `from_color` and `to_color` options.
+> The `rainbow` animation does not use `from_color` and `to_color` options.
 
-### Ease Functions
+### Easing Functions
 
-You can use the following easing functions in `fade` and `reverse_fade`:
-- linear
-- inQuad
-- outQuad
-- inOutQuad
-- outInQuad
-- inCubic
-- outCubic
-- inOutCubic
-- outInCubic
-- inQuart
-- outQuart
-- inOutQuart
-- outInQuart
-- inQuint
-- outQuint
-- inOutQuint
-- outInQuint
-- inSine
-- outSine
-- inOutSine
-- outInSine
-- inExpo
-- outExpo
-- inOutExpo
-- outInExpo
-- inCirc
-- outCirc
-- inOutCirc
-- outInCirc
-- inElastic
-- outElastic
-- inOutElastic
-- outInElastic
-- inBack
-- outBack
-- inOutBack
-- outInBack
-- inBounce
-- outBounce
-- inOutBounce
-- outInBounce
+Available easing functions for `fade` and `reverse_fade` animations:
+
+- `linear`
+- `inQuad`, `outQuad`, `inOutQuad`, `outInQuad`
+- `inCubic`, `outCubic`, `inOutCubic`, `outInCubic`
+- `inQuart`, `outQuart`, `inOutQuart`, `outInQuart`
+- `inQuint`, `outQuint`, `inOutQuint`, `outInQuint`
+- `inSine`, `outSine`, `inOutSine`, `outInSine`
+- `inExpo`, `outExpo`, `inOutExpo`, `outInExpo`
+- `inCirc`, `outCirc`, `inOutCirc`, `outInCirc`
+- `inElastic`, `outElastic`, `inOutElastic`, `outInElastic`
+- `inBack`, `outBack`, `inOutBack`, `outInBack`
+- `inBounce`, `outBounce`, `inOutBounce`, `outInBounce`
 
 ### Animation Settings
 
-Each animation type has its own configuration options:
+Common configuration options across animation types:
 
-- `max_duration`: Maximum duration of the animation in milliseconds
-- `chars_for_max_duration`: Number of characters that will result in max duration
-- `lingering_time`: How long the animation stays visible after completion (for applicable animations)
-- `oscillation_count`: Number of bounces (for bounce animation)
-- `pulse_count`: Number of pulses (for pulse animation)
-- `intensity`: Animation intensity multiplier (for pulse animation)
+| Option | Description | Applicable Animations |
+|--------|-------------|----------------------|
+| `max_duration` | Maximum duration in milliseconds | All |
+| `min_duration` | Minimum duration in milliseconds | All |
+| `chars_for_max_duration` | Character count that triggers max duration | All |
+| `easing` | Easing function name | fade, reverse_fade |
+| `from_color` | Start color (highlight group or hex) | All except rainbow |
+| `to_color` | End color (highlight group or hex) | All except rainbow |
+| `lingering_time` | Time to stay visible after completion (ms) | left_to_right |
+| `oscillation_count` | Number of bounces | bounce |
+| `pulse_count` | Number of pulses | pulse |
+| `intensity` | Animation intensity multiplier | pulse |
 
-## 🎮 Commands
+## API
 
-- `:TinyGlimmer enable` - Enable animations
-- `:TinyGlimmer disable` - Disable animations
-- `:TinyGlimmer <animation>` - Switch animation style
-  - Supported: fade, reverse_fade, bounce, left_to_right, pulse, rainbow, custom
-
-## 🛠️ API
 ```lua
-require('tiny-glimmer').enable()  -- Enable animations
-require('tiny-glimmer').disable() -- Disable animations
-require('tiny-glimmer').toggle()  -- Toggle animations
+local glimmer = require("tiny-glimmer")
 
---- Change highlight
---- @param animation_name string|string[] The animation name. Can be a string or a table of strings.
----    If a table is passed, each animation will have their highlight changed.
----    If a string is passed, only the provided animation have their highlight changed.
----    You can pass 'all' to change all animations.
---- @param hl table The highlight configuration
--- Examples:
--- require('tiny-glimmer').change_hl('fade', { from_color = '#FF0000', to_color = '#0000FF' })
--- require('tiny-glimmer').change_hl('all', { from_color = '#FF0000', to_color = '#0000FF' })
--- require('tiny-glimmer').change_hl({'fade', 'pulse'}, { from_color = '#FF0000', to_color = '#0000FF' })
-require('tiny-glimmer').change_hl(animation_name, hl)
+-- Control plugin state
+glimmer.enable()   -- Enable animations
+glimmer.disable()  -- Disable animations
+glimmer.toggle()   -- Toggle animations on/off
 
--- When overwrite.search.enabled is true
-require('tiny-glimmer').search_next() -- Same as `n`
-require('tiny-glimmer').search_prev() -- Same as `N`
-require('tiny-glimmer').search_under_cursor() -- Same as `*`
+-- Change animation highlights dynamically
+-- @param animation_name string|string[] - Animation name(s) or "all"
+-- @param hl table - Highlight configuration { from_color = "...", to_color = "..." }
+glimmer.change_hl("fade", { from_color = "#FF0000", to_color = "#0000FF" })
+glimmer.change_hl("all", { from_color = "#FF0000", to_color = "#0000FF" })
+glimmer.change_hl({"fade", "pulse"}, { from_color = "#FF0000", to_color = "#0000FF" })
 
--- When overwrite.paste.enabled is true
-require('tiny-glimmer').paste() -- Same as `p`
-require('tiny-glimmer').Paste() -- Same as `P`
+-- Search operations (when overwrite.search.enabled = true)
+glimmer.search_next()          -- Same as "n"
+glimmer.search_prev()          -- Same as "N"
+glimmer.search_under_cursor()  -- Same as "*"
 
--- Undo operations (requires undo.enabled = true)
-require('tiny-glimmer').undo()   -- Undo changes
-require('tiny-glimmer').redo()   -- Redo changes
+-- Paste operations (when overwrite.paste.enabled = true)
+glimmer.paste()   -- Same as "p"
+glimmer.Paste()   -- Same as "P"
+
+-- Undo/redo operations (when undo/redo.enabled = true)
+glimmer.undo()    -- Undo changes
+glimmer.redo()    -- Redo changes
 ```
 
-## ❓FAQ
+### Commands
 
-### Why is there two animations playing at the same time?
-You should disable your own `TextYankPost` autocmd that calls `vim.highlight.on_yank`
+```vim
+:TinyGlimmer enable         " Enable animations
+:TinyGlimmer disable        " Disable animations
+:TinyGlimmer fade           " Switch to fade animation
+:TinyGlimmer reverse_fade   " Switch to reverse_fade animation
+:TinyGlimmer bounce         " Switch to bounce animation
+:TinyGlimmer left_to_right  " Switch to left_to_right animation
+:TinyGlimmer pulse          " Switch to pulse animation
+:TinyGlimmer rainbow        " Switch to rainbow animation
+:TinyGlimmer custom         " Switch to custom animation
+```
+
+Keybinding examples:
+
+```lua
+vim.keymap.set("n", "<leader>ge", "<cmd>TinyGlimmer enable<cr>", { desc = "Enable animations" })
+vim.keymap.set("n", "<leader>gd", "<cmd>TinyGlimmer disable<cr>", { desc = "Disable animations" })
+vim.keymap.set("n", "<leader>gt", "<cmd>TinyGlimmer fade<cr>", { desc = "Switch to fade" })
+```
+
+## Integrations
+
+### gbprod/substitute.nvim
+
+Add animation support to the substitute plugin:
+
+```lua
+{
+    "gbprod/substitute.nvim",
+    dependencies = { "rachartier/tiny-glimmer.nvim" },
+    config = function()
+        require("substitute").setup({
+            on_substitute = require("tiny-glimmer.support.substitute").substitute_cb,
+            highlight_substituted_text = {
+                enabled = false,  -- Disable built-in highlight
+            },
+        })
+    end,
+}
+```
+
+Then enable it in tiny-glimmer config:
+
+```lua
+require("tiny-glimmer").setup({
+    support = {
+        substitute = {
+            enabled = true,
+            default_animation = "fade",
+        },
+    },
+})
+```
+
+### yanky.nvim
+
+Add `yanky.nvim` to tiny-glimmer dependencies to ensure proper loading order:
+
+```lua
+{
+    "rachartier/tiny-glimmer.nvim",
+    dependencies = { "gbprod/yanky.nvim" },
+    event = "VeryLazy",
+    priority = 10,
+    config = function()
+        require("tiny-glimmer").setup()
+    end,
+}
+```
+
+## FAQ
+
+### Why are two animations playing at the same time?
+
+Disable your `TextYankPost` autocmd that calls `vim.highlight.on_yank`:
+
+```lua
+-- Remove or comment out this:
+vim.api.nvim_create_autocmd("TextYankPost", {
+    callback = function()
+        vim.highlight.on_yank()
+    end,
+})
+```
 
 ### Transparent background issues?
-Set the `transparency_color` option to your desired background color.
 
-### How to use it with `yanky.nvim` ?
-You should add `yanky.nvim` in `tiny-glimmer` dependecies.
+Set the `transparency_color` option to match your background:
 
-## Thanks
+```lua
+require("tiny-glimmer").setup({
+    transparency_color = "#000000",  -- Your background color
+})
+```
 
-- [EmmanuelOga/easing](https://github.com/EmmanuelOga) - Easing function implementations
-- [tzachar/highlight-undo.nvim](https://github.com/tzachar/highlight-undo.nvim) - Inspiration for hijack function
+### How to use custom animations?
 
-## 📝 License
+Define a custom animation in the `animations` table:
+
+```lua
+require("tiny-glimmer").setup({
+    animations = {
+        my_custom = {
+            max_duration = 400,
+            chars_for_max_duration = 10,
+            custom_property = "value",
+            
+            effect = function(self, progress)
+                -- Your animation logic here
+                return "#ff0000", progress
+            end,
+        },
+    },
+    overwrite = {
+        yank = {
+            enabled = true,
+            default_animation = "my_custom",
+        },
+    },
+})
+```
+
+### Animations not working?
+
+Check these common issues:
+- Ensure the operation is enabled in `overwrite` config
+- Verify `auto_map = true` or set up manual keybindings
+- Check if the filetype is in `hijack_ft_disabled`
+- Confirm animations are enabled: `:TinyGlimmer enable`
+
+### How to disable for specific filetypes?
+
+Add them to the `hijack_ft_disabled` list:
+
+```lua
+require("tiny-glimmer").setup({
+    hijack_ft_disabled = {
+        "alpha",
+        "dashboard",
+        "neo-tree",
+    },
+})
+```
+
+## Acknowledgments
+
+- [EmmanuelOga/easing](https://github.com/EmmanuelOga/easing) - Easing function implementations
+- [tzachar/highlight-undo.nvim](https://github.com/tzachar/highlight-undo.nvim) - Inspiration for hijack functionality
+
+## License
 
 MIT
-

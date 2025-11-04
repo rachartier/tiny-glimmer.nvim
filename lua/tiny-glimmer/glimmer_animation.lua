@@ -11,11 +11,15 @@
 ---@field index_reserved_ids number Index of the reserved namespace IDs
 ---@field buffer number Buffer ID for the animation
 ---@field default_effect_settings table Cached copy of effect settings
+---@field loop boolean Whether the animation should loop
+---@field loop_count number Number of times to loop (0 = infinite)
 
 ---@class GlimmerAnimationOpts
 ---@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
 ---@field overwrite_from_color string|nil Overwrite from color
 ---@field overwrite_to_color string|nil Overwrite to color
+---@field loop boolean|nil Whether the animation should loop
+---@field loop_count number|nil Number of times to loop (0 = infinite)
 
 local GlimmerAnimation = {}
 GlimmerAnimation.__index = GlimmerAnimation
@@ -53,6 +57,9 @@ function GlimmerAnimation.new(effect, opts)
 
   self.overwrite_from_color = opts.overwrite_from_color
   self.overwrite_to_color = opts.overwrite_to_color
+
+  self.loop = opts.loop or false
+  self.loop_count = opts.loop_count or 0
 
   self.reserved_ids = {}
   self.index_reserved_ids = 1
@@ -194,6 +201,7 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 
   self.co = coroutine.create(function()
     local defer_fn = vim.defer_fn
+    local current_loop = 0
 
     while self.active do
       local elapsed_time = get_time_ms() - self.start_time
@@ -206,29 +214,61 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 
       -- Check if animation is complete
       if progress >= 1 then
-        if lingering_time > 0 then
-          defer_fn(function()
+        -- Handle looping
+        if self.loop then
+          current_loop = current_loop + 1
+          -- loop_count = 0 means infinite, otherwise check if we've looped enough
+          if self.loop_count == 0 or current_loop < self.loop_count then
+            -- Reset animation start time for next loop
+            self.start_time = get_time_ms()
+            defer_fn(function()
+              coroutine.resume(self.co)
+            end, refresh_interval_ms)
+            coroutine.yield()
+          else
+            -- Finished all loops
+            if lingering_time > 0 then
+              defer_fn(function()
+                self:stop()
+                if on_complete then
+                  on_complete()
+                end
+              end, lingering_time)
+              break
+            else
+              self:stop()
+              if on_complete then
+                on_complete()
+              end
+              break
+            end
+          end
+        else
+          -- Not looping, finish normally
+          if lingering_time > 0 then
+            defer_fn(function()
+              self:stop()
+              if on_complete then
+                on_complete()
+              end
+            end, lingering_time)
+            break
+          else
             self:stop()
             if on_complete then
               on_complete()
             end
-          end, lingering_time)
-          break
-        else
-          self:stop()
-          if on_complete then
-            on_complete()
+            break
           end
-          break
         end
+      else
+        -- Schedule next frame
+        defer_fn(function()
+          coroutine.resume(self.co)
+        end, refresh_interval_ms)
+
+        coroutine.yield()
       end
-
-      -- Schedule next frame
-      defer_fn(function()
-        coroutine.resume(self.co)
-      end, refresh_interval_ms)
-
-      coroutine.yield()
     end
   end)
 

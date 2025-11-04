@@ -36,6 +36,8 @@ local utils = require("tiny-glimmer.utils")
 ---@field easing? string Easing function name (defaults to "linear")
 ---@field effect? string Effect type (defaults to "fade")
 ---@field on_complete? function Callback when animation completes
+---@field loop? boolean Whether the animation should loop
+---@field loop_count? number Number of times to loop (0 = infinite)
 
 ---@class CustomEffectOpts
 ---@field settings AnimationSettings Effect settings
@@ -122,14 +124,13 @@ function M.create_animation(opts)
     factory.effect_pool[effect_type] = default_effects[effect_type]
   end
 
-  local buffer = vim.api.nvim_get_current_buf()
-  local effect =
-    factory:_prepare_animation_effect(buffer, animation_type, { base = { range = opts.range } })
-  local animation = require("tiny-glimmer.animation.premade.text").new(
-    effect,
-    { base = { range = opts.range }, on_complete = opts.on_complete }
-  )
-  factory:_manage_animation(animation, buffer)
+  -- Use the factory's create_text_animation method
+  factory:create_text_animation(animation_type, {
+    base = { range = opts.range },
+    on_complete = opts.on_complete,
+    loop = opts.loop,
+    loop_count = opts.loop_count,
+  })
 end
 
 --- Create a line animation (highlights entire lines)
@@ -168,14 +169,13 @@ function M.create_line_animation(opts)
     factory.effect_pool[effect_type] = default_effects[effect_type]
   end
 
-  local buffer = vim.api.nvim_get_current_buf()
-  local effect =
-    factory:_prepare_animation_effect(buffer, animation_type, { base = { range = opts.range } })
-  local animation = require("tiny-glimmer.animation.premade.line").new(
-    effect,
-    { base = { range = opts.range }, on_complete = opts.on_complete }
-  )
-  factory:_manage_animation(animation, buffer)
+  -- Use the factory's create_line_animation method
+  factory:create_line_animation(animation_type, {
+    base = { range = opts.range },
+    on_complete = opts.on_complete,
+    loop = opts.loop,
+    loop_count = opts.loop_count,
+  })
 end
 
 --- Create a text animation (highlights specific character ranges)
@@ -230,7 +230,7 @@ function M.create_named_animation(name, opts)
     factory:_prepare_animation_effect(buffer, animation_type, { base = { range = opts.range } })
   local animation = require("tiny-glimmer.animation.premade.text").new(
     effect,
-    { base = { range = opts.range }, on_complete = opts.on_complete }
+    { base = { range = opts.range }, on_complete = opts.on_complete, loop = opts.loop, loop_count = opts.loop_count }
   )
   factory:_manage_named_animation(name, animation, buffer)
 end
@@ -297,6 +297,209 @@ function M.get_line_range(line)
     end_line = line - 1,
     end_col = #line_content,
   }
+end
+
+--- Get the yank range from the last yank operation
+---@return AnimationRange|nil
+function M.get_yank_range()
+  local start_pos = vim.fn.getpos("'[")
+  local end_pos = vim.fn.getpos("']")
+
+  if start_pos[2] == 0 or end_pos[2] == 0 then
+    return nil
+  end
+
+  return {
+    start_line = start_pos[2] - 1,
+    start_col = start_pos[3] - 1,
+    end_line = end_pos[2] - 1,
+    end_col = end_pos[3],
+  }
+end
+
+--- Helper: Animate cursor line with an effect
+---@param effect string|table Effect name or effect configuration table
+---@param opts? table Optional settings override
+function M.cursor_line(effect, opts)
+  ensure_initialized()
+  
+  -- Check if plugin is enabled
+  local config = require("tiny-glimmer").config
+  if config and not config.enabled then
+    return
+  end
+  
+  opts = opts or {}
+  local effect_name, effect_settings
+  
+  if type(effect) == "table" then
+    effect_name = effect.name
+    effect_settings = effect.settings or {}
+  else
+    effect_name = effect
+    effect_settings = {}
+  end
+  
+  local factory = AnimationFactory.get_instance()
+  
+  -- Get effect from pool
+  if not factory.effect_pool[effect_name] then
+    error("TinyGlimmer: Unknown effect: " .. effect_name)
+  end
+  
+  local base_settings = factory.effect_pool[effect_name].settings or {}
+  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
+  
+  M.create_line_animation({
+    range = M.get_line_range(0),
+    duration = merged_settings.max_duration or 300,
+    from_color = merged_settings.from_color or "Visual",
+    to_color = merged_settings.to_color or "Normal",
+    effect = effect_name,
+    easing = merged_settings.easing,
+    loop = opts.loop,
+    loop_count = opts.loop_count,
+  })
+end
+
+--- Helper: Animate visual selection with an effect
+---@param effect string|table Effect name or effect configuration table
+---@param opts? table Optional settings override
+function M.visual_selection(effect, opts)
+  ensure_initialized()
+  
+  -- Check if plugin is enabled
+  local config = require("tiny-glimmer").config
+  if config and not config.enabled then
+    return
+  end
+  
+  local range = M.get_visual_range()
+  if not range then
+    return
+  end
+  
+  opts = opts or {}
+  local effect_name, effect_settings
+  
+  if type(effect) == "table" then
+    effect_name = effect.name
+    effect_settings = effect.settings or {}
+  else
+    effect_name = effect
+    effect_settings = {}
+  end
+  
+  local factory = AnimationFactory.get_instance()
+  
+  -- Get effect from pool
+  if not factory.effect_pool[effect_name] then
+    error("TinyGlimmer: Unknown effect: " .. effect_name)
+  end
+  
+  local base_settings = factory.effect_pool[effect_name].settings or {}
+  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
+  
+  M.create_text_animation({
+    range = range,
+    duration = merged_settings.max_duration or 300,
+    from_color = merged_settings.from_color or "Visual",
+    to_color = merged_settings.to_color or "Normal",
+    effect = effect_name,
+    easing = merged_settings.easing,
+  })
+end
+
+--- Helper: Animate a specific range with an effect
+---@param effect string|table Effect name or effect configuration table
+---@param range AnimationRange The range to animate
+---@param opts? table Optional settings override
+function M.animate_range(effect, range, opts)
+  ensure_initialized()
+  
+  -- Check if plugin is enabled
+  local config = require("tiny-glimmer").config
+  if config and not config.enabled then
+    return
+  end
+  
+  opts = opts or {}
+  local effect_name, effect_settings
+  
+  if type(effect) == "table" then
+    effect_name = effect.name
+    effect_settings = effect.settings or {}
+  else
+    effect_name = effect
+    effect_settings = {}
+  end
+  
+  local factory = AnimationFactory.get_instance()
+  
+  -- Get effect from pool
+  if not factory.effect_pool[effect_name] then
+    error("TinyGlimmer: Unknown effect: " .. effect_name)
+  end
+  
+  local base_settings = factory.effect_pool[effect_name].settings or {}
+  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
+  
+  M.create_text_animation({
+    range = range,
+    duration = merged_settings.max_duration or 300,
+    from_color = merged_settings.from_color or "Visual",
+    to_color = merged_settings.to_color or "Normal",
+    effect = effect_name,
+    easing = merged_settings.easing,
+  })
+end
+
+--- Helper: Create a named animation for a range
+---@param name string Animation name
+---@param effect string|table Effect name or effect configuration table
+---@param range AnimationRange The range to animate
+---@param opts? table Optional settings override
+function M.named_animate_range(name, effect, range, opts)
+  ensure_initialized()
+  
+  -- Check if plugin is enabled
+  local config = require("tiny-glimmer").config
+  if config and not config.enabled then
+    return
+  end
+  
+  opts = opts or {}
+  local effect_name, effect_settings
+  
+  if type(effect) == "table" then
+    effect_name = effect.name
+    effect_settings = effect.settings or {}
+  else
+    effect_name = effect
+    effect_settings = {}
+  end
+  
+  local factory = AnimationFactory.get_instance()
+  
+  -- Get effect from pool
+  if not factory.effect_pool[effect_name] then
+    error("TinyGlimmer: Unknown effect: " .. effect_name)
+  end
+  
+  local base_settings = factory.effect_pool[effect_name].settings or {}
+  local merged_settings = vim.tbl_extend("force", base_settings, effect_settings, opts)
+  
+  M.create_named_animation(name, {
+    range = range,
+    duration = merged_settings.max_duration or 300,
+    from_color = merged_settings.from_color or "Visual",
+    to_color = merged_settings.to_color or "Normal",
+    effect = effect_name,
+    easing = merged_settings.easing,
+    on_complete = opts.on_complete,
+    loop = opts.loop,
+    loop_count = opts.loop_count,
+  })
 end
 
 --- Available easing functions

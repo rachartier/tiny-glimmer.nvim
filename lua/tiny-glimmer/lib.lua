@@ -4,6 +4,11 @@
 ---@field create_text_animation function Create a text-based animation
 ---@field create_named_animation function Create a named animation that can be stopped
 ---@field stop_animation function Stop a named animation
+---@field stop_all function Stop all running animations in current buffer
+---@field get_word_range function Get range for word under cursor
+---@field get_paragraph_range function Get range for current paragraph
+---@field animate_word function Animate word under cursor
+---@field paragraph function Animate current paragraph
 ---@field easing table Available easing functions
 ---@field effects table Available effect types
 
@@ -165,6 +170,32 @@ function M.stop_animation(name)
   end
 end
 
+--- Stop all running animations in current buffer
+function M.stop_all()
+  local factory = AnimationFactory.get_instance()
+  local buffer = vim.api.nvim_get_current_buf()
+
+  if not factory.buffers[buffer] then
+    return
+  end
+
+  -- Stop all named animations
+  for name, _ in pairs(factory.buffers[buffer].named_animations or {}) do
+    M.stop_animation(name)
+  end
+
+  -- Stop all line animations
+  for _, animation in pairs(factory.buffers[buffer].animations or {}) do
+    if animation and animation.stop then
+      animation:stop()
+    end
+  end
+
+  -- Clear the collections
+  factory.buffers[buffer].named_animations = {}
+  factory.buffers[buffer].animations = {}
+end
+
 --- Get current cursor position as a range
 ---@return AnimationRange
 function M.get_cursor_range()
@@ -188,6 +219,81 @@ end
 ---@return AnimationRange|nil
 function M.get_yank_range()
   return RangeUtils.get_yank_range()
+end
+
+--- Get range for word under cursor
+---@return AnimationRange|nil
+function M.get_word_range()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local line = cursor[1] - 1
+  local col = cursor[2]
+
+  local line_text = vim.api.nvim_buf_get_lines(0, line, line + 1, false)[1]
+  if not line_text then
+    return nil
+  end
+
+  -- Find word boundaries using Vim's keyword pattern
+  local word_start = col
+  local word_end = col
+
+  -- Move backward to find word start
+  while word_start > 0 and line_text:sub(word_start, word_start):match("[%w_]") do
+    word_start = word_start - 1
+  end
+  if word_start > 0 or not line_text:sub(1, 1):match("[%w_]") then
+    word_start = word_start + 1
+  end
+
+  -- Move forward to find word end
+  while word_end < #line_text and line_text:sub(word_end + 1, word_end + 1):match("[%w_]") do
+    word_end = word_end + 1
+  end
+
+  if word_start >= word_end then
+    return nil
+  end
+
+  return {
+    start_line = line,
+    start_col = word_start,
+    end_line = line,
+    end_col = word_end + 1,
+  }
+end
+
+--- Get range for current paragraph
+---@return AnimationRange
+function M.get_paragraph_range()
+  local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+  local total_lines = vim.api.nvim_buf_line_count(0)
+
+  -- Find paragraph start (empty line above or buffer start)
+  local start_line = cursor_line
+  while start_line > 1 do
+    local line = vim.api.nvim_buf_get_lines(0, start_line - 2, start_line - 1, false)[1]
+    if line and line:match("^%s*$") then
+      break
+    end
+    start_line = start_line - 1
+  end
+
+  -- Find paragraph end (empty line below or buffer end)
+  local end_line = cursor_line
+  while end_line < total_lines do
+    local line = vim.api.nvim_buf_get_lines(0, end_line, end_line + 1, false)[1]
+    if line and line:match("^%s*$") then
+      break
+    end
+    end_line = end_line + 1
+  end
+
+  return {
+    start_line = start_line - 1,
+    start_col = 0,
+    end_line = end_line - 1,
+    end_col = 0,
+  }
 end
 
 --- Helper: Animate cursor line with an effect
@@ -231,6 +337,53 @@ function M.visual_selection(effect, opts)
 
   M.create_text_animation({
     range = range,
+    duration = merged_settings.max_duration or 300,
+    from_color = merged_settings.from_color or "Visual",
+    to_color = merged_settings.to_color or "Normal",
+    effect = effect_name,
+    easing = merged_settings.easing,
+  })
+end
+
+--- Helper: Animate word under cursor
+---@param effect string|table Effect name or effect configuration table
+---@param opts? table Optional settings override
+function M.animate_word(effect, opts)
+  if not Helpers.check_enabled() then
+    return
+  end
+
+  local range = M.get_word_range()
+  if not range then
+    return
+  end
+
+  opts = opts or {}
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
+  M.create_text_animation({
+    range = range,
+    duration = merged_settings.max_duration or 300,
+    from_color = merged_settings.from_color or "Visual",
+    to_color = merged_settings.to_color or "Normal",
+    effect = effect_name,
+    easing = merged_settings.easing,
+  })
+end
+
+--- Helper: Animate current paragraph
+---@param effect string|table Effect name or effect configuration table
+---@param opts? table Optional settings override
+function M.paragraph(effect, opts)
+  if not Helpers.check_enabled() then
+    return
+  end
+
+  opts = opts or {}
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
+  M.create_line_animation({
+    range = M.get_paragraph_range(),
     duration = merged_settings.max_duration or 300,
     from_color = merged_settings.from_color or "Visual",
     to_color = merged_settings.to_color or "Normal",

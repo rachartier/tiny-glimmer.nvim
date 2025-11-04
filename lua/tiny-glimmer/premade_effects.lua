@@ -1,27 +1,30 @@
-local Effect = require("tiny-glimmer.animation.effect")
 local easing_functions = require("tiny-glimmer.animation.easing")
 local utils = require("tiny-glimmer.utils")
 
-local function create_effect(opts)
-  return Effect.new({}, opts.update_fn, opts.builder)
-end
-
 return {
-  fade = create_effect({
+  fade = {
+    settings = {},
     builder = function(self)
       return {
         initial = utils.hex_to_rgb(self.settings.from_color),
         final = utils.hex_to_rgb(self.settings.to_color),
       }
     end,
+    build_starter = function(self)
+      if self.builder then
+        self.starter = self.builder(self)
+      end
+    end,
+    update_settings = function(self, settings)
+      self.settings = settings
+    end,
     update_fn = function(self, progress, ease)
       local initial = self.starter.initial
       local final = self.starter.final
-      local current = {}
 
       local fn = easing_functions[ease]
 
-      current = {
+      local current = {
         r = utils.clamp(fn(progress, initial.r, final.r - initial.r, 1), 0, 255),
         g = utils.clamp(fn(progress, initial.g, final.g - initial.g, 1), 0, 255),
         b = utils.clamp(fn(progress, initial.b, final.b - initial.b, 1), 0, 255),
@@ -29,13 +32,22 @@ return {
 
       return utils.rgb_to_hex(current), 1
     end,
-  }),
-  reverse_fade = create_effect({
+  },
+  reverse_fade = {
+    settings = {},
     builder = function(self)
       return {
         initial = utils.hex_to_rgb(self.settings.from_color),
         final = utils.hex_to_rgb(self.settings.to_color),
       }
+    end,
+    build_starter = function(self)
+      if self.builder then
+        self.starter = self.builder(self)
+      end
+    end,
+    update_settings = function(self, settings)
+      self.settings = settings
     end,
     update_fn = function(self, progress, ease)
       local initial = self.starter.initial
@@ -51,13 +63,22 @@ return {
 
       return utils.rgb_to_hex(current), 1
     end,
-  }),
-  bounce = create_effect({
+  },
+  bounce = {
+    settings = {},
     builder = function(self)
       return {
         initial = utils.hex_to_rgb(self.settings.from_color),
         final = utils.hex_to_rgb(self.settings.to_color),
       }
+    end,
+    build_starter = function(self)
+      if self.builder then
+        self.starter = self.builder(self)
+      end
+    end,
+    update_settings = function(self, settings)
+      self.settings = settings
     end,
     update_fn = function(self, progress)
       local oscillation = math.abs(math.sin(progress * math.pi * self.settings.oscillation_count))
@@ -72,8 +93,9 @@ return {
 
       return utils.rgb_to_hex(current), 1
     end,
-  }),
-  left_to_right = create_effect({
+  },
+  left_to_right = {
+    settings = {},
     builder = function(self)
       return {
         initial = utils.hex_to_rgb(self.settings.from_color),
@@ -81,6 +103,14 @@ return {
         min_progress = self.settings.min_progress or 0,
         max_progress = self.settings.max_progress or 1,
       }
+    end,
+    build_starter = function(self)
+      if self.builder then
+        self.starter = self.builder(self)
+      end
+    end,
+    update_settings = function(self, settings)
+      self.settings = settings
     end,
     update_fn = function(self, progress, ease)
       local initial = self.starter.initial
@@ -109,13 +139,22 @@ return {
 
       return utils.rgb_to_hex(current), progress
     end,
-  }),
-  pulse = create_effect({
+  },
+  pulse = {
+    settings = {},
     builder = function(self)
       return {
         initial = utils.hex_to_rgb(self.settings.from_color),
         final = utils.hex_to_rgb(self.settings.to_color),
       }
+    end,
+    build_starter = function(self)
+      if self.builder then
+        self.starter = self.builder(self)
+      end
+    end,
+    update_settings = function(self, settings)
+      self.settings = settings
     end,
     update_fn = function(self, progress)
       local initial = self.starter.initial
@@ -132,8 +171,13 @@ return {
 
       return utils.rgb_to_hex(current), 1
     end,
-  }),
-  rainbow = create_effect({
+  },
+  rainbow = {
+    settings = {},
+    build_starter = function(self) end,
+    update_settings = function(self, settings)
+      self.settings = settings
+    end,
     update_fn = function(self, progress)
       local rainbow_colors = {
         { r = 255, g = 0, b = 0 },
@@ -160,5 +204,5 @@ return {
 
       return utils.rgb_to_hex(current), 1
     end,
-  }),
+  },
 }

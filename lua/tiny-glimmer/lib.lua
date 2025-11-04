@@ -403,9 +403,21 @@ function M.animate_range(effect, range, opts)
 
   opts = opts or {}
   local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+  
+  -- Handle -1 for end_col (means end of line)
+  local processed_range = vim.deepcopy(range)
+  if processed_range.end_col == -1 then
+    local buf = vim.api.nvim_get_current_buf()
+    local line = vim.api.nvim_buf_get_lines(buf, processed_range.end_line, processed_range.end_line + 1, false)[1]
+    if line then
+      processed_range.end_col = #line
+    else
+      processed_range.end_col = 0
+    end
+  end
 
   M.create_text_animation({
-    range = range,
+    range = processed_range,
     duration = merged_settings.max_duration or 300,
     from_color = merged_settings.from_color or "Visual",
     to_color = merged_settings.to_color or "Normal",

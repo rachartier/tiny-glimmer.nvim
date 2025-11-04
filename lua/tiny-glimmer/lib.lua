@@ -45,45 +45,35 @@ local RangeUtils = require("tiny-glimmer.range_utils")
 ---@field update_fn function(self, progress: number, ease: string): string, number Function that returns color and progress
 ---@field builder? function(self): table Optional function to build starter data
 
-local initialized = false
-local default_effects = {}
-
---- Initialize the library with default effects
-local function ensure_initialized()
-  if initialized then
-    return
-  end
-
-  -- Initialize with minimal config if not already done
-  if not AnimationFactory.instance then
-    AnimationFactory.initialize({ virtual_text_priority = 2048 }, {}, 8)
-  end
-
-  -- Load default effects
-  default_effects = require("tiny-glimmer.premade_effects")
-
-  -- Ensure factory has effect_pool
-  local factory = AnimationFactory.get_instance()
-  if not factory.effect_pool or vim.tbl_isempty(factory.effect_pool) then
-    factory.effect_pool = default_effects
-  end
-
-  initialized = true
+--- Build animation settings from opts
+---@param opts SimpleAnimationOpts Animation options
+---@return table settings Animation settings table
+local function build_animation_settings(opts)
+  return {
+    max_duration = opts.duration or 300,
+    min_duration = opts.duration or 300,
+    chars_for_max_duration = 10,
+    easing = opts.easing or "linear",
+    from_color = Helpers.normalize_color(opts.from_color),
+    to_color = Helpers.normalize_color(opts.to_color),
+  }
 end
 
---- Normalize color to hex format
----@param color string Color hex or highlight group name
----@return string hex_color
-local function normalize_color(color)
-  return Helpers.normalize_color(color)
+--- Validate required animation options
+---@param opts SimpleAnimationOpts Animation options
+local function validate_animation_opts(opts)
+  if not opts.range then
+    error("TinyGlimmer: range is required")
+  end
+  if not opts.from_color or not opts.to_color then
+    error("TinyGlimmer: from_color and to_color are required")
+  end
 end
 
 --- Create a custom effect
 ---@param opts CustomEffectOpts Effect configuration
 ---@return table effect The created effect
 function M.create_effect(opts)
-  ensure_initialized()
-
   if not opts.update_fn then
     error("TinyGlimmer: update_fn is required for custom effects")
   end
@@ -94,40 +84,14 @@ end
 --- Create a simple animation with minimal configuration
 ---@param opts SimpleAnimationOpts Animation options
 function M.create_animation(opts)
-  ensure_initialized()
-
-  if not opts.range then
-    error("TinyGlimmer: range is required")
-  end
-
-  if not opts.from_color or not opts.to_color then
-    error("TinyGlimmer: from_color and to_color are required")
-  end
-
-  local effect_type = opts.effect or "fade"
-  local settings = {
-    max_duration = opts.duration or 300,
-    min_duration = opts.duration or 300,
-    chars_for_max_duration = 10,
-    easing = opts.easing or "linear",
-    from_color = normalize_color(opts.from_color),
-    to_color = normalize_color(opts.to_color),
-  }
+  validate_animation_opts(opts)
 
   local animation_type = {
-    name = effect_type,
-    settings = settings,
+    name = opts.effect or "fade",
+    settings = build_animation_settings(opts),
   }
 
   local factory = AnimationFactory.get_instance()
-  factory.effect_pool = factory.effect_pool or default_effects
-
-  -- Ensure the effect exists in the pool
-  if not factory.effect_pool[effect_type] then
-    factory.effect_pool[effect_type] = default_effects[effect_type]
-  end
-
-  -- Use the factory's create_text_animation method
   factory:create_text_animation(animation_type, {
     base = { range = opts.range },
     on_complete = opts.on_complete,
@@ -139,40 +103,14 @@ end
 --- Create a line animation (highlights entire lines)
 ---@param opts SimpleAnimationOpts Animation options (start_col and end_col are ignored)
 function M.create_line_animation(opts)
-  ensure_initialized()
-
-  if not opts.range then
-    error("TinyGlimmer: range is required")
-  end
-
-  if not opts.from_color or not opts.to_color then
-    error("TinyGlimmer: from_color and to_color are required")
-  end
-
-  local effect_type = opts.effect or "fade"
-  local settings = {
-    max_duration = opts.duration or 300,
-    min_duration = opts.duration or 300,
-    chars_for_max_duration = 10,
-    easing = opts.easing or "linear",
-    from_color = normalize_color(opts.from_color),
-    to_color = normalize_color(opts.to_color),
-  }
+  validate_animation_opts(opts)
 
   local animation_type = {
-    name = effect_type,
-    settings = settings,
+    name = opts.effect or "fade",
+    settings = build_animation_settings(opts),
   }
 
   local factory = AnimationFactory.get_instance()
-  factory.effect_pool = factory.effect_pool or default_effects
-
-  -- Ensure the effect exists in the pool
-  if not factory.effect_pool[effect_type] then
-    factory.effect_pool[effect_type] = default_effects[effect_type]
-  end
-
-  -- Use the factory's create_line_animation method
   factory:create_line_animation(animation_type, {
     base = { range = opts.range },
     on_complete = opts.on_complete,
@@ -191,63 +129,33 @@ end
 ---@param name string Unique name for the animation
 ---@param opts SimpleAnimationOpts Animation options
 function M.create_named_animation(name, opts)
-  ensure_initialized()
-
   if not name then
     error("TinyGlimmer: name is required for named animations")
   end
 
-  if not opts.range then
-    error("TinyGlimmer: range is required")
-  end
-
-  if not opts.from_color or not opts.to_color then
-    error("TinyGlimmer: from_color and to_color are required")
-  end
-
-  local effect_type = opts.effect or "fade"
-  local settings = {
-    max_duration = opts.duration or 300,
-    min_duration = opts.duration or 300,
-    chars_for_max_duration = 10,
-    easing = opts.easing or "linear",
-    from_color = normalize_color(opts.from_color),
-    to_color = normalize_color(opts.to_color),
-  }
+  validate_animation_opts(opts)
 
   local animation_type = {
-    name = effect_type,
-    settings = settings,
+    name = opts.effect or "fade",
+    settings = build_animation_settings(opts),
   }
 
   local factory = AnimationFactory.get_instance()
-  factory.effect_pool = factory.effect_pool or default_effects
-
-  -- Ensure the effect exists in the pool
-  if not factory.effect_pool[effect_type] then
-    factory.effect_pool[effect_type] = default_effects[effect_type]
-  end
-
   local buffer = vim.api.nvim_get_current_buf()
   local effect =
     factory:_prepare_animation_effect(buffer, animation_type, { base = { range = opts.range } })
-  local animation = require("tiny-glimmer.animation.premade.text").new(
-    effect,
-    {
-      base = { range = opts.range },
-      on_complete = opts.on_complete,
-      loop = opts.loop,
-      loop_count = opts.loop_count,
-    }
-  )
+  local animation = require("tiny-glimmer.animation.premade.text").new(effect, {
+    base = { range = opts.range },
+    on_complete = opts.on_complete,
+    loop = opts.loop,
+    loop_count = opts.loop_count,
+  })
   factory:_manage_named_animation(name, animation, buffer, opts.on_complete)
 end
 
 --- Stop a named animation
 ---@param name string Name of the animation to stop
 function M.stop_animation(name)
-  ensure_initialized()
-
   local factory = AnimationFactory.get_instance()
   local buffer = vim.api.nvim_get_current_buf()
 
@@ -286,8 +194,6 @@ end
 ---@param effect string|table Effect name or effect configuration table
 ---@param opts? table Optional settings override
 function M.cursor_line(effect, opts)
-  ensure_initialized()
-
   if not Helpers.check_enabled() then
     return
   end
@@ -311,8 +217,6 @@ end
 ---@param effect string|table Effect name or effect configuration table
 ---@param opts? table Optional settings override
 function M.visual_selection(effect, opts)
-  ensure_initialized()
-
   if not Helpers.check_enabled() then
     return
   end
@@ -340,8 +244,6 @@ end
 ---@param range AnimationRange The range to animate
 ---@param opts? table Optional settings override
 function M.animate_range(effect, range, opts)
-  ensure_initialized()
-
   if not Helpers.check_enabled() then
     return
   end
@@ -365,8 +267,6 @@ end
 ---@param range AnimationRange The range to animate
 ---@param opts? table Optional settings override
 function M.named_animate_range(name, effect, range, opts)
-  ensure_initialized()
-
   if not Helpers.check_enabled() then
     return
   end

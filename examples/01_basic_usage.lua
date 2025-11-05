@@ -5,7 +5,7 @@ vim.keymap.set("n", "<leader>al", function()
   glimmer.cursor_line("pulse")
 end)
 
--- Animate cursor character
+-- Animate next character
 vim.keymap.set("n", "<leader>ac", function()
   local r = glimmer.get_cursor_range()
 

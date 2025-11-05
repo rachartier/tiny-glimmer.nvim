@@ -18,7 +18,7 @@ vim.api.nvim_create_autocmd("CursorMoved", {
   callback = function()
     local current_line = vim.api.nvim_win_get_cursor(0)[1]
     if current_line ~= last_line then
-      glimmer.cursor_line("fade")
+      glimmer.named_animate_range("current_line", "fade", glimmer.get_line_range(current_line))
       last_line = current_line
     end
   end,

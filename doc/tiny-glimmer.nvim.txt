@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*   For Neovim >= 0.10.0   Last change: 2025 November 04
+*tiny-glimmer.nvim.txt*   For Neovim >= 0.10.0   Last change: 2025 November 05
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -30,6 +30,9 @@ like yank, paste, search, undo/redo, and more.
 
   [!WARNING] This plugin is still in beta. Breaking changes may occur in future
   updates.
+
+https://github.com/user-attachments/assets/745cb1e3-9904-4718-9804-ac0a4fee8748
+
 
 TABLE OF CONTENTS      *tiny-glimmer.nvim-tiny-glimmer.nvim-table-of-contents*
 

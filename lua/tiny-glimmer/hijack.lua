@@ -41,13 +41,18 @@ function M.hijack(mode, lhs, rhs, command)
   end
   local existing_mapping = vim.fn.maparg(lhs, mode, false, true)
 
+  -- Skip hijacking if the existing mapping uses <SID> to avoid script context errors
+  if existing_mapping and existing_mapping.rhs and existing_mapping.rhs:find("<SID>") then
+    return
+  end
+
   vim.keymap.set(mode, lhs, function()
     -- When a macro is executing, completely bypass the hijack and use original behavior
     if vim.fn.reg_executing() ~= "" then
       if existing_mapping and existing_mapping.callback then
         existing_mapping.callback()
-      elseif existing_mapping and existing_mapping.rhs then
-        vim.api.nvim_exec2("normal! " .. existing_mapping.rhs, {})
+     elseif existing_mapping and existing_mapping.rhs then
+       vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
       else
         vim.api.nvim_exec2("normal! " .. lhs, {})
       end

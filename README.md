@@ -801,6 +801,33 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 ```
 
+### Search keys not working with Lazy Vim?
+
+When using Lazy Vim with search animations enabled, you may need to add the `keys` property to your plugin specification to ensure proper key mapping:
+
+```lua
+{
+    "rachartier/tiny-glimmer.nvim",
+    event = "VeryLazy",
+    priority = 10,
+    keys = {
+        "n",
+        "N",
+    },
+    config = function()
+        require("tiny-glimmer").setup({
+            overwrite = {
+                search = {
+                    enabled = true,
+                },
+            },
+        })
+    end,
+}
+```
+
+This tells Lazy Vim to load the plugin when the `n` or `N` keys are pressed, ensuring the plugin's key mappings take precedence.
+
 ### Transparent background issues?
 
 Set the `transparency_color` option to match your background:

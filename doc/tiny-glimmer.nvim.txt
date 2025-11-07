@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*   For Neovim >= 0.10.0   Last change: 2025 November 05
+*tiny-glimmer.nvim.txt*   For Neovim >= 0.10.0   Last change: 2025 November 07
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -867,6 +867,36 @@ Disable your `TextYankPost` autocmd that calls `vim.highlight.on_yank`:
         end,
     })
 <
+
+
+SEARCH KEYS NOT WORKING WITH LAZY VIM? ~
+
+When using Lazy Vim with search animations enabled, you may need to add the
+`keys` property to your plugin specification to ensure proper key mapping:
+
+>lua
+    {
+        "rachartier/tiny-glimmer.nvim",
+        event = "VeryLazy",
+        priority = 10,
+        keys = {
+            "n",
+            "N",
+        },
+        config = function()
+            require("tiny-glimmer").setup({
+                overwrite = {
+                    search = {
+                        enabled = true,
+                    },
+                },
+            })
+        end,
+    }
+<
+
+This tells Lazy Vim to load the plugin when the `n` or `N` keys are pressed,
+ensuring the plugin’s key mappings take precedence.
 
 
 TRANSPARENT BACKGROUND ISSUES? ~

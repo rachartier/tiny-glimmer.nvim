@@ -3,12 +3,10 @@ local M = {}
 M.config = nil
 M.hijack_done = false
 
---- Setup the plugin
 function M.setup(user_options)
   local setup_module = require("tiny-glimmer.setup")
   M.config = setup_module.initialize(user_options)
 
-  -- Lazy-load API methods
   local api = require("tiny-glimmer.api")
   M.enable = api.enable
   M.disable = api.disable

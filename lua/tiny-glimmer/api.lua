@@ -153,14 +153,14 @@ end
 
 function M.redo()
   local config = get_config()
-  if not config.overwrite.undo.enabled then
+  if not config.overwrite.redo.enabled then
     vim.notify(
-      'TinyGlimmer: Undo is not enabled in your configuration.\nYou should not use require("tiny-glimmer").redo().',
+      'TinyGlimmer: Redo is not enabled in your configuration.\nYou should not use require("tiny-glimmer").redo().',
       vim.log.levels.WARN
     )
     return
   end
-  require("tiny-glimmer.overwrite.undo").redo(config.overwrite.redo)
+  require("tiny-glimmer.overwrite.redo").redo(config.overwrite.redo)
 end
 
 return M

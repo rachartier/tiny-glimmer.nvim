@@ -96,6 +96,7 @@ return {
 
   refresh_interval_ms = 8,
   transparency_color = nil,
+  text_change_batch_timeout_ms = 50,
 
   animations = {
     fade = {

@@ -114,6 +114,10 @@ require("tiny-glimmer").setup({
     -- Animation refresh rate in milliseconds
     refresh_interval_ms = 8,
 
+    -- Timeout in milliseconds to batch text changes from multiple locations
+    -- Increase this value if animations break with surround plugins or similar
+    text_change_batch_timeout_ms = 50,
+
     -- Automatic keybinding overwrites
     overwrite = {
         -- Automatically map keys to overwrite operations

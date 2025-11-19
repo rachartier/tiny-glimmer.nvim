@@ -1,8 +1,9 @@
 local M = {}
 
 ---@param callback function|nil Function to call with the merged ranges
+---@param timeout? number Timeout in milliseconds to batch changes (default: from config)
 ---@return nil
-function M.handle_text_change_animation(callback)
+function M.handle_text_change_animation(callback, timeout)
   -- check macro execution and skip text_change animation if a macro is running
   if vim.fn.reg_executing() ~= "" then
     return
@@ -64,6 +65,12 @@ function M.handle_text_change_animation(callback)
     on_bytes = on_bytes,
   })
 
+  -- Get timeout from parameter or config
+  if not timeout then
+    local config = require("tiny-glimmer.config.defaults")
+    timeout = config.text_change_batch_timeout_ms or 50
+  end
+
   vim.defer_fn(function()
     detach_listener = true
 
@@ -113,7 +120,7 @@ function M.handle_text_change_animation(callback)
     if callback then
       callback(final_ranges)
     end
-  end, 10)
+  end, timeout)
 end
 
 return M

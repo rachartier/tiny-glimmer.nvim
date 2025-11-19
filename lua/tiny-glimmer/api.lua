@@ -160,7 +160,7 @@ function M.redo()
     )
     return
   end
-  require("tiny-glimmer.overwrite.redo").redo(config.overwrite.redo)
+  require("tiny-glimmer.overwrite.undo").redo(config.overwrite.redo)
 end
 
 return M

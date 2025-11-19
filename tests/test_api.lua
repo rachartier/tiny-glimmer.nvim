@@ -158,10 +158,10 @@ T["undo/redo methods"]["undo warns when undo disabled"] = function()
   api.undo() -- Should show warning
 end
 
-T["undo/redo methods"]["redo warns when undo disabled"] = function()
-  -- Intentionally disable undo to test warning
+T["undo/redo methods"]["redo warns when redo disabled"] = function()
+  -- Intentionally disable redo to test warning
   local glimmer = H.setup_glimmer({
-    overwrite = { undo = { enabled = false } },
+    overwrite = { redo = { enabled = false } },
   })
   local api = require("tiny-glimmer.api")
   api.redo() -- Should show warning

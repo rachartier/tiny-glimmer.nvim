@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*   For Neovim >= 0.10.0   Last change: 2025 November 07
+*tiny-glimmer.nvim.txt*   For Neovim >= 0.10.0   Last change: 2025 November 19
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -145,6 +145,10 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
     
         -- Animation refresh rate in milliseconds
         refresh_interval_ms = 8,
+    
+        -- Timeout in milliseconds to batch text changes from multiple locations
+        -- Increase this value if animations break with surround plugins or similar
+        text_change_batch_timeout_ms = 50,
     
         -- Automatic keybinding overwrites
         overwrite = {

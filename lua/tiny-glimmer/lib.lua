@@ -35,7 +35,8 @@ local RangeUtils = require("tiny-glimmer.range_utils")
 ---@field lingering_time? number Time to linger after animation completes in ms
 
 ---@class SimpleAnimationOpts
----@field range AnimationRange The range to animate
+---@field range? AnimationRange The range to animate (use range OR ranges, not both)
+---@field ranges? AnimationRange[] Multiple ranges to animate simultaneously
 ---@field duration number Animation duration in ms
 ---@field from_color string Start color (hex or highlight group)
 ---@field to_color string End color (hex or highlight group)
@@ -67,8 +68,11 @@ end
 --- Validate required animation options
 ---@param opts SimpleAnimationOpts Animation options
 local function validate_animation_opts(opts)
-  if not opts.range then
-    error("TinyGlimmer: range is required")
+  if not opts.range and not opts.ranges then
+    error("TinyGlimmer: range or ranges is required")
+  end
+  if opts.range and opts.ranges then
+    error("TinyGlimmer: specify either range or ranges, not both")
   end
   if not opts.from_color or not opts.to_color then
     error("TinyGlimmer: from_color and to_color are required")
@@ -97,8 +101,16 @@ function M.create_animation(opts)
   }
 
   local factory = AnimationFactory.get_instance()
+  
+  local base = {}
+  if opts.ranges then
+    base.ranges = opts.ranges
+  else
+    base.range = opts.range
+  end
+  
   factory:create_text_animation(animation_type, {
-    base = { range = opts.range },
+    base = base,
     on_complete = opts.on_complete,
     loop = opts.loop,
     loop_count = opts.loop_count,
@@ -116,8 +128,16 @@ function M.create_line_animation(opts)
   }
 
   local factory = AnimationFactory.get_instance()
+  
+  local base = {}
+  if opts.ranges then
+    base.ranges = opts.ranges
+  else
+    base.range = opts.range
+  end
+  
   factory:create_line_animation(animation_type, {
-    base = { range = opts.range },
+    base = base,
     on_complete = opts.on_complete,
     loop = opts.loop,
     loop_count = opts.loop_count,
@@ -147,10 +167,18 @@ function M.create_named_animation(name, opts)
 
   local factory = AnimationFactory.get_instance()
   local buffer = vim.api.nvim_get_current_buf()
+  
+  local base = {}
+  if opts.ranges then
+    base.ranges = opts.ranges
+  else
+    base.range = opts.range
+  end
+  
   local effect =
-    factory:_prepare_animation_effect(buffer, animation_type, { base = { range = opts.range } })
+    factory:_prepare_animation_effect(buffer, animation_type, { base = base })
   local animation = require("tiny-glimmer.animation.premade.text").new(effect, {
-    base = { range = opts.range },
+    base = base,
     on_complete = opts.on_complete,
     loop = opts.loop,
     loop_count = opts.loop_count,

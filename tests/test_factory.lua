@@ -87,7 +87,7 @@ T["factory"]["prepare_animation_effect requires range"] = function()
   AnimationFactory.initialize(nil, { fade = { settings = {} } })
   MiniTest.expect.error(function()
     AnimationFactory.instance:_prepare_animation_effect(1, "fade", { base = {} })
-  end, "TinyGlimmer: Range is required in options")
+  end, "TinyGlimmer: Range or ranges is required in options")
 end
 
 T["factory"]["prepare_animation_effect with string animation_type"] = function()

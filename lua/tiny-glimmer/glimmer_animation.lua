@@ -1,6 +1,6 @@
 ---@class GlimmerAnimation
 ---@field effect Effect Animation effect implementation
----@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
+---@field ranges { start_line: number, start_col: number, end_line: number, end_col: number }[] Selection coordinates (supports multiple ranges)
 ---@field start_time number Unix timestamp when animation started
 ---@field active boolean Current animation state
 ---@field id number Animation ID
@@ -15,7 +15,8 @@
 ---@field loop_count number Number of times to loop (0 = infinite)
 
 ---@class GlimmerAnimationOpts
----@field range { start_line: number, start_col: number, end_line: number, end_col: number } Selection coordinates
+---@field range { start_line: number, start_col: number, end_line: number, end_col: number }|nil Single range (deprecated, use ranges)
+---@field ranges { start_line: number, start_col: number, end_line: number, end_col: number }[]|nil Multiple ranges
 ---@field overwrite_from_color string|nil Overwrite from color
 ---@field overwrite_to_color string|nil Overwrite to color
 ---@field loop boolean|nil Whether the animation should loop
@@ -37,8 +38,9 @@ local animation_pool_id = 0
 ---@param effect Effect The animation effect implementation to use
 ---@return GlimmerAnimation The created animation instance
 function GlimmerAnimation.new(effect, opts)
-  if not opts.range then
-    error("TinyGlimmer: range is required in opts")
+  -- Support both single range and multiple ranges
+  if not opts.range and not opts.ranges then
+    error("TinyGlimmer: range or ranges is required in opts")
   end
 
   local self = setmetatable({}, GlimmerAnimation)
@@ -48,7 +50,16 @@ function GlimmerAnimation.new(effect, opts)
 
   self.default_effect_settings = vim.deepcopy(effect.settings)
 
-  self.range = opts.range
+  -- Convert single range to ranges array for uniform handling
+  if opts.ranges then
+    self.ranges = opts.ranges
+    -- For backwards compatibility, set range to first range
+    self.range = opts.ranges[1]
+  elseif opts.range then
+    self.ranges = {opts.range}
+    self.range = opts.range
+  end
+  
   self.start_time = 0
   self.active = false
 
@@ -107,7 +118,10 @@ function GlimmerAnimation:cleanup()
     api.nvim_buf_del_extmark(buffer, namespace, ids[i])
   end
 
-  api.nvim_buf_clear_namespace(buffer, namespace, self.range.start_line, self.range.end_line + 1)
+  -- Clear namespace for all ranges
+  for _, range in ipairs(self.ranges) do
+    api.nvim_buf_clear_namespace(buffer, namespace, range.start_line, range.end_line + 1)
+  end
 
   animation_pool_id = math.max(0, animation_pool_id - 1)
 end
@@ -191,7 +205,11 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
   self.active = true
   self.start_time = get_time_ms()
 
-  local lines_count = self.range.end_line - self.range.start_line + 1
+  -- Calculate total lines across all ranges
+  local lines_count = 0
+  for _, range in ipairs(self.ranges) do
+    lines_count = lines_count + (range.end_line - range.start_line + 1)
+  end
   self.reserved_ids = namespace_id_pool.reserve_ns_ids(lines_count)
 
   local duration = calculate_duration(length, self.effect.settings)

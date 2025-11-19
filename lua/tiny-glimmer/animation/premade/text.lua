@@ -90,41 +90,46 @@ end
 ---@return table[] Line configurations
 local function compute_lines_range(self, animation_progress)
   local lines = {}
+  
+  -- Support both single range (legacy) and multiple ranges
+  local ranges = self.animation.ranges or {self.animation.range}
+  
+  for _, range in ipairs(ranges) do
+    local more_than_one_line = range.start_line ~= range.end_line
 
-  local more_than_one_line = self.animation.range.start_line ~= self.animation.range.end_line
+    for i = range.start_line, range.end_line do
+      if is_in_viewport(self, i) then
+        local count = MAX_END_COL
+        local start_position = range.start_col
 
-  for i = self.animation.range.start_line, self.animation.range.end_line do
-    if is_in_viewport(self, i) then
-      local count = MAX_END_COL
-      local start_position = self.animation.range.start_col
-
-      if self.event.is_visual_block then
-        start_position = self.animation.range.start_col
-        count = self.animation.range.end_col - self.animation.range.start_col
-      else
-        if i == self.animation.range.start_line then
-          -- First line
-          start_position = self.animation.range.start_col
-          count = self.animation.range.end_col - self.animation.range.start_col
-          if count == 0 or more_than_one_line then
-            count = MAX_END_COL
-          end
-        elseif i > self.animation.range.start_line and i < self.animation.range.end_line then
-          -- Middle lines
-          start_position = 0
-          count = MAX_END_COL
+        if self.event.is_visual_block then
+          start_position = range.start_col
+          count = range.end_col - range.start_col
         else
-          -- Last line
-          start_position = 0
-          count = self.animation.range.end_col
+          if i == range.start_line then
+            -- First line
+            start_position = range.start_col
+            count = range.end_col - range.start_col
+            if count == 0 or more_than_one_line then
+              count = MAX_END_COL
+            end
+          elseif i > range.start_line and i < range.end_line then
+            -- Middle lines
+            start_position = 0
+            count = MAX_END_COL
+          else
+            -- Last line
+            start_position = 0
+            count = range.end_col
+          end
         end
-      end
 
-      table.insert(lines, {
-        line_number = i,
-        start_position = start_position,
-        count = math.ceil(count * animation_progress),
-      })
+        table.insert(lines, {
+          line_number = i,
+          start_position = start_position,
+          count = math.ceil(count * animation_progress),
+        })
+      end
     end
   end
 
@@ -159,7 +164,15 @@ end
 ---@param refresh_interval_ms number Refresh interval in milliseconds
 ---@param on_complete function Callback function when animation is complete
 function TextAnimation:start(refresh_interval_ms, on_complete)
-  local length = self.animation.range.end_col - self.animation.range.start_col
+  -- Support both single range and multiple ranges
+  local ranges = self.animation.ranges or {self.animation.range}
+  
+  -- Calculate total length across all ranges
+  local length = 0
+  for _, range in ipairs(ranges) do
+    length = length + (range.end_col - range.start_col)
+  end
+  
   local buf = self.buffer
 
   self.animation:start(refresh_interval_ms, length, {
@@ -169,13 +182,15 @@ function TextAnimation:start(refresh_interval_ms, on_complete)
         return
       end
       
-      -- Clear previous animation state
-      vim.api.nvim_buf_clear_namespace(
-        buf,
-        namespace,
-        self.animation.range.start_line,
-        self.animation.range.end_line + 1
-      )
+      -- Clear previous animation state for all ranges
+      for _, range in ipairs(ranges) do
+        vim.api.nvim_buf_clear_namespace(
+          buf,
+          namespace,
+          range.start_line,
+          range.end_line + 1
+        )
+      end
 
       -- Apply new animation state
       local lines_range = compute_lines_range(self, update_progress)

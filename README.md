@@ -114,8 +114,10 @@ require("tiny-glimmer").setup({
     -- Animation refresh rate in milliseconds
     refresh_interval_ms = 8,
 
-    -- Timeout in milliseconds to batch text changes from multiple locations
-    -- Increase this value if animations break with surround plugins or similar
+    -- Timeout in milliseconds to wait after the last edit before processing animations
+    -- This uses a debouncing approach: the timer restarts on each edit, and only fires
+    -- when edits stop for this duration. This properly handles multi-location atomic
+    -- edits from surround plugins and similar tools (default: 50)
     text_change_batch_timeout_ms = 50,
 
     -- Automatic keybinding overwrites

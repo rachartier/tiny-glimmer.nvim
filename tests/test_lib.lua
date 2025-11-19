@@ -29,7 +29,10 @@ local function mock_animation_modules()
   package.loaded["tiny-glimmer.animation.premade.text"] = {
     new = function(effect, opts)
       return {
-        animation = { range = opts.base.range },
+        animation = { 
+          range = opts.base.range,
+          ranges = opts.base.ranges
+        },
         start = function(self, refresh, callback)
           self.started = true
           self.refresh = refresh
@@ -44,7 +47,10 @@ local function mock_animation_modules()
   package.loaded["tiny-glimmer.animation.premade.line"] = {
     new = function(effect, opts)
       return {
-        animation = { range = opts.base.range },
+        animation = { 
+          range = opts.base.range,
+          ranges = opts.base.ranges
+        },
         start = function(self, refresh, callback)
           self.started = true
           self.refresh = refresh
@@ -76,7 +82,7 @@ T["lib"]["create_animation requires range"] = function()
       from_color = "#ff0000",
       to_color = "#00ff00",
     })
-  end, "TinyGlimmer: range is required")
+  end, "TinyGlimmer: range or ranges is required")
 end
 
 T["lib"]["create_animation requires from_color"] = function()
@@ -220,7 +226,7 @@ T["lib"]["create_line_animation requires range"] = function()
       from_color = "#ff0000",
       to_color = "#00ff00",
     })
-  end, "TinyGlimmer: range is required")
+  end, "TinyGlimmer: range or ranges is required")
 end
 
 T["lib"]["create_line_animation requires colors"] = function()
@@ -309,7 +315,7 @@ T["lib"]["create_named_animation requires range"] = function()
       from_color = "#ff0000",
       to_color = "#00ff00",
     })
-  end, "TinyGlimmer: range is required")
+  end, "TinyGlimmer: range or ranges is required")
 end
 
 T["lib"]["create_named_animation requires colors"] = function()
@@ -734,6 +740,89 @@ T["lib"]["paragraph animates current paragraph"] = function()
   MiniTest.expect.no_error(function()
     Lib.paragraph("pulse")
   end)
+
+  restore_buffer_api()
+end
+
+-- Test multi-range animations
+T["lib"]["create_animation accepts ranges parameter"] = function()
+  reset_state()
+  ensure_factory_has_effects()
+  mock_buffer_api()
+  mock_animation_modules()
+
+  MiniTest.expect.no_error(function()
+    Lib.create_animation({
+      ranges = {
+        { start_line = 0, start_col = 0, end_line = 0, end_col = 5 },
+        { start_line = 0, start_col = 10, end_line = 0, end_col = 15 },
+      },
+      from_color = "#ff0000",
+      to_color = "#00ff00",
+      duration = 300,
+    })
+  end)
+
+  restore_buffer_api()
+end
+
+T["lib"]["create_animation rejects both range and ranges"] = function()
+  reset_state()
+
+  MiniTest.expect.error(function()
+    Lib.create_animation({
+      range = { start_line = 0, start_col = 0, end_line = 0, end_col = 5 },
+      ranges = {
+        { start_line = 0, start_col = 0, end_line = 0, end_col = 5 },
+      },
+      from_color = "#ff0000",
+      to_color = "#00ff00",
+      duration = 300,
+    })
+  end, "TinyGlimmer: specify either range or ranges, not both")
+end
+
+T["lib"]["create_line_animation accepts ranges parameter"] = function()
+  reset_state()
+  ensure_factory_has_effects()
+  mock_buffer_api()
+  mock_animation_modules()
+
+  MiniTest.expect.no_error(function()
+    Lib.create_line_animation({
+      ranges = {
+        { start_line = 0, start_col = 0, end_line = 0, end_col = 5 },
+        { start_line = 1, start_col = 0, end_line = 1, end_col = 5 },
+      },
+      from_color = "#ff0000",
+      to_color = "#00ff00",
+      duration = 300,
+    })
+  end)
+
+  restore_buffer_api()
+end
+
+T["lib"]["create_named_animation accepts ranges parameter"] = function()
+  reset_state()
+  ensure_factory_has_effects()
+  mock_buffer_api()
+  mock_animation_modules()
+
+  MiniTest.expect.no_error(function()
+    Lib.create_named_animation("multi_range_test", {
+      ranges = {
+        { start_line = 0, start_col = 0, end_line = 0, end_col = 5 },
+        { start_line = 0, start_col = 10, end_line = 0, end_col = 15 },
+      },
+      from_color = "#ff0000",
+      to_color = "#00ff00",
+      duration = 300,
+    })
+  end)
+
+  local factory = AnimationFactory.get_instance()
+  MiniTest.expect.equality(type(factory.buffers[1].named_animations["multi_range_test"]), "table")
 
   restore_buffer_api()
 end

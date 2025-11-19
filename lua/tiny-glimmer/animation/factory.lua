@@ -74,8 +74,8 @@ end
 --- @param opts table Animation creation options
 --- @return table Prepared animation effect
 function AnimationFactory:_prepare_animation_effect(buffer, animation_type, opts)
-  if not opts.base.range then
-    error("TinyGlimmer: Range is required in options")
+  if not opts.base.range and not opts.base.ranges then
+    error("TinyGlimmer: Range or ranges is required in options")
   end
 
   self.buffers[buffer] = self.buffers[buffer] or {}
@@ -101,11 +101,17 @@ function AnimationFactory:_manage_animation(animation_obj, buffer, on_complete)
   end
 
   local animation = animation_obj.animation
-  if not animation or not animation.range or not animation.range.start_line then
+  if not animation then
+    error("TinyGlimmer: Invalid animation object - missing animation")
+  end
+  
+  -- Support both single range and multi-range
+  local range_to_check = animation.range or (animation.ranges and animation.ranges[1])
+  if not range_to_check or not range_to_check.start_line then
     error("TinyGlimmer: Invalid animation object - missing range or start_line")
   end
   
-  local line_key = animation.range.start_line
+  local line_key = range_to_check.start_line
 
   -- Ensure buffer entry exists
   if not self.buffers[buffer] then

@@ -238,7 +238,7 @@ function M.get_word_range()
   local word_end = col
 
   -- Move backward to find word start
-  while word_start > 0 and line_text:sub(word_start, word_start):match("[%w_]") do
+  while word_start > 0 and line_text:sub(word_start + 1, word_start + 1):match("[%w_]") do
     word_start = word_start - 1
   end
   if word_start > 0 or not line_text:sub(1, 1):match("[%w_]") then
@@ -258,7 +258,7 @@ function M.get_word_range()
     start_line = line,
     start_col = word_start,
     end_line = line,
-    end_col = word_end + 1,
+    end_col = word_end,
   }
 end
 

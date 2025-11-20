@@ -1,5 +1,9 @@
-return {
-  paste = require("tiny-glimmer.overwrite.paste"),
-  search = require("tiny-glimmer.overwrite.search"),
-  undo = require("tiny-glimmer.overwrite.undo"),
-}
+local M = {}
+
+setmetatable(M, {
+  __index = function(_, key)
+    return require("tiny-glimmer.overwrite." .. key)
+  end,
+})
+
+return M

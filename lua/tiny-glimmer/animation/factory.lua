@@ -104,13 +104,13 @@ function AnimationFactory:_manage_animation(animation_obj, buffer, on_complete)
   if not animation then
     error("TinyGlimmer: Invalid animation object - missing animation")
   end
-  
+
   -- Support both single range and multi-range
   local range_to_check = animation.range or (animation.ranges and animation.ranges[1])
   if not range_to_check or not range_to_check.start_line then
     error("TinyGlimmer: Invalid animation object - missing range or start_line")
   end
-  
+
   local line_key = range_to_check.start_line
 
   -- Ensure buffer entry exists

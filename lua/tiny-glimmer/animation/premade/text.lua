@@ -90,10 +90,10 @@ end
 ---@return table[] Line configurations
 local function compute_lines_range(self, animation_progress)
   local lines = {}
-  
+
   -- Support both single range (legacy) and multiple ranges
-  local ranges = self.animation.ranges or {self.animation.range}
-  
+  local ranges = self.animation.ranges or { self.animation.range }
+
   for _, range in ipairs(ranges) do
     local more_than_one_line = range.start_line ~= range.end_line
 
@@ -165,14 +165,14 @@ end
 ---@param on_complete function Callback function when animation is complete
 function TextAnimation:start(refresh_interval_ms, on_complete)
   -- Support both single range and multiple ranges
-  local ranges = self.animation.ranges or {self.animation.range}
-  
+  local ranges = self.animation.ranges or { self.animation.range }
+
   -- Calculate total length across all ranges
   local length = 0
   for _, range in ipairs(ranges) do
     length = length + (range.end_col - range.start_col)
   end
-  
+
   local buf = self.buffer
 
   self.animation:start(refresh_interval_ms, length, {
@@ -181,15 +181,10 @@ function TextAnimation:start(refresh_interval_ms, on_complete)
       if not vim.api.nvim_buf_is_valid(buf) then
         return
       end
-      
+
       -- Clear previous animation state for all ranges
       for _, range in ipairs(ranges) do
-        vim.api.nvim_buf_clear_namespace(
-          buf,
-          namespace,
-          range.start_line,
-          range.end_line + 1
-        )
+        vim.api.nvim_buf_clear_namespace(buf, namespace, range.start_line, range.end_line + 1)
       end
 
       -- Apply new animation state

@@ -94,7 +94,7 @@ function M.set_extmark(line, ns_id, col, opts, bufnr)
 
   opts = opts or {}
   opts.strict = false
-  
+
   bufnr = bufnr or 0
 
   return vim.api.nvim_buf_set_extmark(bufnr, ns_id, line, col, opts)

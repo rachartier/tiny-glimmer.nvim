@@ -56,10 +56,10 @@ function GlimmerAnimation.new(effect, opts)
     -- For backwards compatibility, set range to first range
     self.range = opts.ranges[1]
   elseif opts.range then
-    self.ranges = {opts.range}
+    self.ranges = { opts.range }
     self.range = opts.range
   end
-  
+
   self.start_time = 0
   self.active = false
 

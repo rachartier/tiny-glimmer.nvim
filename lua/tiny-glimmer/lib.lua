@@ -101,14 +101,14 @@ function M.create_animation(opts)
   }
 
   local factory = AnimationFactory.get_instance()
-  
+
   local base = {}
   if opts.ranges then
     base.ranges = opts.ranges
   else
     base.range = opts.range
   end
-  
+
   factory:create_text_animation(animation_type, {
     base = base,
     on_complete = opts.on_complete,
@@ -128,14 +128,14 @@ function M.create_line_animation(opts)
   }
 
   local factory = AnimationFactory.get_instance()
-  
+
   local base = {}
   if opts.ranges then
     base.ranges = opts.ranges
   else
     base.range = opts.range
   end
-  
+
   factory:create_line_animation(animation_type, {
     base = base,
     on_complete = opts.on_complete,
@@ -167,16 +167,15 @@ function M.create_named_animation(name, opts)
 
   local factory = AnimationFactory.get_instance()
   local buffer = vim.api.nvim_get_current_buf()
-  
+
   local base = {}
   if opts.ranges then
     base.ranges = opts.ranges
   else
     base.range = opts.range
   end
-  
-  local effect =
-    factory:_prepare_animation_effect(buffer, animation_type, { base = base })
+
+  local effect = factory:_prepare_animation_effect(buffer, animation_type, { base = base })
   local animation = require("tiny-glimmer.animation.premade.text").new(effect, {
     base = base,
     on_complete = opts.on_complete,
@@ -431,12 +430,17 @@ function M.animate_range(effect, range, opts)
 
   opts = opts or {}
   local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-  
+
   -- Handle -1 for end_col (means end of line)
   local processed_range = vim.deepcopy(range)
   if processed_range.end_col == -1 then
     local buf = vim.api.nvim_get_current_buf()
-    local line = vim.api.nvim_buf_get_lines(buf, processed_range.end_line, processed_range.end_line + 1, false)[1]
+    local line = vim.api.nvim_buf_get_lines(
+      buf,
+      processed_range.end_line,
+      processed_range.end_line + 1,
+      false
+    )[1]
     if line then
       processed_range.end_col = #line
     else

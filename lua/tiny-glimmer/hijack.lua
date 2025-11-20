@@ -51,8 +51,8 @@ function M.hijack(mode, lhs, rhs, command)
     if vim.fn.reg_executing() ~= "" then
       if existing_mapping and existing_mapping.callback then
         existing_mapping.callback()
-     elseif existing_mapping and existing_mapping.rhs then
-       vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
+      elseif existing_mapping and existing_mapping.rhs then
+        vim.api.nvim_feedkeys(add_count_and_registers(existing_mapping.rhs), "n", true)
       else
         vim.api.nvim_exec2("normal! " .. lhs, {})
       end

@@ -29,9 +29,9 @@ local function mock_animation_modules()
   package.loaded["tiny-glimmer.animation.premade.text"] = {
     new = function(effect, opts)
       return {
-        animation = { 
+        animation = {
           range = opts.base.range,
-          ranges = opts.base.ranges
+          ranges = opts.base.ranges,
         },
         start = function(self, refresh, callback)
           self.started = true
@@ -47,9 +47,9 @@ local function mock_animation_modules()
   package.loaded["tiny-glimmer.animation.premade.line"] = {
     new = function(effect, opts)
       return {
-        animation = { 
+        animation = {
           range = opts.base.range,
-          ranges = opts.base.ranges
+          ranges = opts.base.ranges,
         },
         start = function(self, refresh, callback)
           self.started = true

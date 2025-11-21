@@ -1,8 +1,8 @@
 local M = {}
 
----Merge overlapping or adjacent ranges
+---Remove overlapping portions from ranges
 ---@param ranges table[] List of {start_line, start_col, end_line, end_col} ranges
----@return table[] Merged ranges
+---@return table[] Non-overlapping ranges
 local function merge_ranges(ranges)
   if #ranges == 0 then
     return {}
@@ -17,32 +17,40 @@ local function merge_ranges(ranges)
   end)
 
   local final_ranges = {}
-  local current = ranges[1]
 
-  for i = 2, #ranges do
-    local next_range = ranges[i]
+  for _, range in ipairs(ranges) do
+    -- Only add non-empty ranges
+    if range.start_line == range.end_line and range.start_col == range.end_col then
+      goto continue
+    end
 
-    -- Check if ranges overlap or are adjacent
-    if
-      current.end_line < next_range.start_line
-      or (current.end_line == next_range.start_line and current.end_col < next_range.start_col)
-    then
-      -- No overlap, add current range and start new one
-      if current.start_line ~= current.end_line or current.start_col ~= current.end_col then
-        table.insert(final_ranges, current)
-      end
-      current = next_range
-    else
-      -- Merge overlapping ranges
-      current.end_line = math.max(current.end_line, next_range.end_line)
-      if current.end_line == next_range.end_line then
-        current.end_col = math.max(current.end_col, next_range.end_col)
+    -- Check for overlap with previous ranges and adjust
+    local adjusted_range = {
+      start_line = range.start_line,
+      start_col = range.start_col,
+      end_line = range.end_line,
+      end_col = range.end_col,
+    }
+
+    for _, prev_range in ipairs(final_ranges) do
+      -- Check if ranges are on the same line and overlap
+      if adjusted_range.start_line == prev_range.start_line and adjusted_range.end_line == prev_range.end_line then
+        -- Check if current range overlaps with previous range
+        if adjusted_range.start_col < prev_range.end_col and adjusted_range.end_col > prev_range.start_col then
+          -- Overlapping! Adjust the current range to start after the previous one
+          if adjusted_range.start_col < prev_range.end_col then
+            adjusted_range.start_col = prev_range.end_col
+          end
+        end
       end
     end
-  end
 
-  if current.start_line ~= current.end_line or current.start_col ~= current.end_col then
-    table.insert(final_ranges, current)
+    -- Only add if still non-empty after adjustment
+    if adjusted_range.start_col < adjusted_range.end_col then
+      table.insert(final_ranges, adjusted_range)
+    end
+
+    ::continue::
   end
 
   return final_ranges
@@ -56,7 +64,7 @@ local function setup_change_detector(opts)
   local ranges = {}
   local detach_listener = false
 
-  local function on_bytes(_, _, _, start_row, start_col, _, _, _, _, new_end_row, new_end_col, _)
+  local function on_bytes(_, _, _, start_row, start_col, _, old_end_row, old_end_col, _, new_end_row, new_end_col, _)
     if detach_listener then
       return true
     end
@@ -73,6 +81,26 @@ local function setup_change_detector(opts)
       end
     end
 
+    -- Calculate the net change in text length
+    local old_len = old_end_col
+    local new_len = new_end_col
+    local delta = new_len - old_len
+
+    -- Adjust positions of all previously collected ranges on the same line
+    -- that come after this insertion point
+    if delta ~= 0 and start_row == end_row then
+      for _, prev_range in ipairs(ranges) do
+        if prev_range.start_line == start_row then
+          -- If previous range starts at or after this insertion, shift it
+          if prev_range.start_col >= start_col then
+            prev_range.start_col = prev_range.start_col + delta
+            prev_range.end_col = prev_range.end_col + delta
+          end
+        end
+      end
+    end
+
+    -- Default: add the full range
     table.insert(ranges, {
       start_line = start_row,
       start_col = start_col,

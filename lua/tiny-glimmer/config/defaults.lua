@@ -6,6 +6,7 @@ local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
 return {
   enabled = true,
   disable_warnings = true,
+  autoreload = false,
 
   overwrite = {
     auto_map = true,

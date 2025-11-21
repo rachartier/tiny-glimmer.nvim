@@ -163,4 +163,11 @@ function M.redo()
   require("tiny-glimmer.overwrite.undo").redo(config.overwrite.redo)
 end
 
+--- Refresh highlights after theme change
+function M.apply()
+  local config = get_config()
+  local highlights = require("tiny-glimmer.config.highlights")
+  highlights.sanitize_highlights(config)
+end
+
 return M

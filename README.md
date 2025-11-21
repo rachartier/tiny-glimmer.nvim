@@ -111,6 +111,10 @@ require("tiny-glimmer").setup({
     -- Disable warnings for debugging highlight issues
     disable_warnings = true,
 
+    -- Automatically reload highlights when colorscheme changes
+    -- When enabled, cached highlights will be refreshed on ColorScheme autocmd
+    autoreload = false,
+
     -- Animation refresh rate in milliseconds
     refresh_interval_ms = 8,
 
@@ -359,6 +363,9 @@ glimmer.Paste()   -- Same as "P"
 -- Undo/redo operations (when undo/redo.enabled = true)
 glimmer.undo()    -- Undo changes
 glimmer.redo()    -- Redo changes
+
+-- Refresh highlights after theme change
+glimmer.apply()   -- Recompute cached highlights for current colorscheme
 ```
 
 ### Commands

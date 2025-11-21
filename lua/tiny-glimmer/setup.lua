@@ -149,6 +149,16 @@ function M.initialize(user_options)
     end,
   })
 
+  -- Setup autoreload on colorscheme change
+  if config.autoreload then
+    vim.api.nvim_create_autocmd("ColorScheme", {
+      group = namespace,
+      callback = function()
+        require("tiny-glimmer").apply()
+      end,
+    })
+  end
+
   return config
 end
 

@@ -20,6 +20,7 @@ function M.setup(user_options)
   M.Paste = api.Paste
   M.undo = api.undo
   M.redo = api.redo
+  M.apply = api.apply
 end
 
 --- Custom remap delegation (needed by external callers)

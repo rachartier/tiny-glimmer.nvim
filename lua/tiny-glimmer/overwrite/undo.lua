@@ -46,7 +46,12 @@ local function merge_ranges(ranges)
     end
 
     -- Only add if still non-empty after adjustment
-    if adjusted_range.start_col < adjusted_range.end_col then
+    -- For multi-line ranges: check if different lines
+    -- For single-line ranges: check if different columns
+    local is_non_empty = adjusted_range.start_line < adjusted_range.end_line
+      or (adjusted_range.start_line == adjusted_range.end_line and adjusted_range.start_col < adjusted_range.end_col)
+    
+    if is_non_empty then
       table.insert(final_ranges, adjusted_range)
     end
 
@@ -86,27 +91,41 @@ local function setup_change_detector(opts)
     local new_len = new_end_col
     local delta = new_len - old_len
 
-    -- Adjust positions of all previously collected ranges on the same line
-    -- that come after this insertion point
-    if delta ~= 0 and start_row == end_row then
-      for _, prev_range in ipairs(ranges) do
-        if prev_range.start_line == start_row then
-          -- If previous range starts at or after this insertion, shift it
-          if prev_range.start_col >= start_col then
-            prev_range.start_col = prev_range.start_col + delta
-            prev_range.end_col = prev_range.end_col + delta
+    -- Adjust positions of all previously collected ranges that come after this change
+    if delta ~= 0 then
+      -- For single-line changes, adjust on same line
+      if start_row == end_row then
+        for _, prev_range in ipairs(ranges) do
+          if prev_range.start_line == start_row then
+            -- If previous range starts at or after this insertion, shift it
+            if prev_range.start_col >= start_col then
+              prev_range.start_col = prev_range.start_col + delta
+              prev_range.end_col = prev_range.end_col + delta
+            end
+          end
+        end
+      -- For multi-line changes, adjust all subsequent lines
+      elseif new_end_row > 0 then
+        local line_delta = new_end_row - old_end_row
+        for _, prev_range in ipairs(ranges) do
+          -- Shift all ranges on lines at or after the insertion point
+          if prev_range.start_line >= start_row then
+            prev_range.start_line = prev_range.start_line + line_delta
+            prev_range.end_line = prev_range.end_line + line_delta
           end
         end
       end
     end
 
-    -- Default: add the full range
-    table.insert(ranges, {
+    local range = {
       start_line = start_row,
       start_col = start_col,
       end_line = end_row,
       end_col = end_col,
-    })
+    }
+
+    -- Default: add the full range
+    table.insert(ranges, range)
   end
 
   -- Attach buffer listener

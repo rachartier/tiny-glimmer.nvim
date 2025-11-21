@@ -9,9 +9,10 @@ local function simulate_undo_ranges(on_bytes_calls)
   -- Simulate the on_bytes callback logic from undo.lua
   for _, call in ipairs(on_bytes_calls) do
     local start_row, start_col = call.start_row, call.start_col
-    local old_end_col, new_end_col = call.old_end_col, call.new_end_col
+    local old_end_row, old_end_col = call.old_end_row or 0, call.old_end_col
+    local new_end_row, new_end_col = call.new_end_row or 0, call.new_end_col
 
-    local end_row = start_row
+    local end_row = start_row + new_end_row
     local end_col = start_col + new_end_col
 
     -- Calculate the net change in text length
@@ -19,13 +20,26 @@ local function simulate_undo_ranges(on_bytes_calls)
     local new_len = new_end_col
     local delta = new_len - old_len
 
-    -- Adjust positions of all previously collected ranges
+    -- Adjust positions of all previously collected ranges that come after this change
     if delta ~= 0 then
-      for _, prev_range in ipairs(ranges) do
-        if prev_range.start_line == start_row then
-          if prev_range.start_col >= start_col then
-            prev_range.start_col = prev_range.start_col + delta
-            prev_range.end_col = prev_range.end_col + delta
+      -- For single-line changes, adjust on same line
+      if new_end_row == 0 then
+        for _, prev_range in ipairs(ranges) do
+          if prev_range.start_line == start_row then
+            if prev_range.start_col >= start_col then
+              prev_range.start_col = prev_range.start_col + delta
+              prev_range.end_col = prev_range.end_col + delta
+            end
+          end
+        end
+      -- For multi-line changes, adjust all subsequent lines
+      elseif new_end_row > 0 then
+        local line_delta = new_end_row - old_end_row
+        for _, prev_range in ipairs(ranges) do
+          -- Shift all ranges on lines at or after the insertion point
+          if prev_range.start_line >= start_row then
+            prev_range.start_line = prev_range.start_line + line_delta
+            prev_range.end_line = prev_range.end_line + line_delta
           end
         end
       end
@@ -188,6 +202,72 @@ T["undo range adjustment"]["preserves ranges on different lines"] = function()
   MiniTest.expect.equality(ranges[1].end_col, 5)
   MiniTest.expect.equality(ranges[2].start_col, 0)
   MiniTest.expect.equality(ranges[2].end_col, 5)
+end
+
+T["undo range adjustment"]["handles line deletion undo (dd then u)"] = function()
+  -- Scenario: Delete line 2 with dd, then undo to restore it
+  -- Buffer before: line1\nline2\nline3
+  -- After dd: line1\nline3
+  -- After undo: line1\nline2\nline3
+  --
+  -- When undoing a line deletion, on_bytes receives a multi-line insertion:
+  -- start_row=1, start_col=0, old_end_row=0, old_end_col=0, new_end_row=1, new_end_col=0
+  -- This inserts "line2\n" at position [1,0]
+
+  local on_bytes_calls = {
+    {
+      start_row = 1,
+      start_col = 0,
+      old_end_row = 0,
+      old_end_col = 0,
+      new_end_row = 1,
+      new_end_col = 0,
+    },
+  }
+
+  local ranges = simulate_undo_ranges(on_bytes_calls)
+  MiniTest.expect.equality(#ranges, 1)
+  MiniTest.expect.equality(ranges[1].start_line, 1)
+  MiniTest.expect.equality(ranges[1].start_col, 0)
+  MiniTest.expect.equality(ranges[1].end_line, 2)
+  MiniTest.expect.equality(ranges[1].end_col, 0)
+end
+
+T["undo range adjustment"]["handles multi-line change with subsequent line shift"] = function()
+  -- Scenario: Two multi-line insertions where the first should shift
+  -- First insert 2 lines at row 0
+  -- Then insert 1 line at row 0 (comes before the first insertion)
+  -- The first insertion's ranges should be shifted down by 1
+
+  local on_bytes_calls = {
+    {
+      start_row = 0,
+      start_col = 0,
+      old_end_row = 0,
+      old_end_col = 0,
+      new_end_row = 2,
+      new_end_col = 5,
+    },
+    {
+      start_row = 0,
+      start_col = 0,
+      old_end_row = 0,
+      old_end_col = 0,
+      new_end_row = 1,
+      new_end_col = 3,
+    },
+  }
+
+  local ranges = simulate_undo_ranges(on_bytes_calls)
+  MiniTest.expect.equality(#ranges, 2)
+  
+  -- After sorting, the ranges should be in order:
+  -- ranges[1]: [0,0]->[1,3] (second insertion)
+  -- ranges[2]: [1,0]->[3,5] (first insertion, shifted)
+  MiniTest.expect.equality(ranges[1].start_line, 0)
+  MiniTest.expect.equality(ranges[1].end_line, 1)
+  MiniTest.expect.equality(ranges[2].start_line, 1)
+  MiniTest.expect.equality(ranges[2].end_line, 3)
 end
 
 return T

@@ -1,10 +1,12 @@
 local M = {}
 
 M.config = nil
+M.user_config = nil
 M.hijack_done = false
 
 function M.setup(user_options)
   local setup_module = require("tiny-glimmer.setup")
+  M.user_config = user_options
   M.config = setup_module.initialize(user_options)
 
   local api = require("tiny-glimmer.api")

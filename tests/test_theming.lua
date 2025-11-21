@@ -38,4 +38,32 @@ T["autoreload"]["default is false"] = function()
   MiniTest.expect.equality(defaults.autoreload, false)
 end
 
+T["apply()"]["re-evaluates highlight groups"] = function()
+  -- Set up a custom highlight group
+  vim.api.nvim_set_hl(0, "TestHighlight", { bg = "#ff0000" })
+  
+  setup_plugin({
+    animations = {
+      test = {
+        from_color = "TestHighlight",
+        to_color = "#00ff00",
+      }
+    }
+  })
+  
+  local glimmer = require("tiny-glimmer")
+  local first_color = glimmer.config.animations.test.from_color
+  
+  -- Change the highlight group color
+  vim.api.nvim_set_hl(0, "TestHighlight", { bg = "#0000ff" })
+  
+  -- Apply should re-evaluate the highlight group
+  glimmer.apply()
+  
+  local second_color = glimmer.config.animations.test.from_color
+  
+  MiniTest.expect.equality(first_color:lower(), "#ff0000")
+  MiniTest.expect.equality(second_color:lower(), "#0000ff")
+end
+
 return T

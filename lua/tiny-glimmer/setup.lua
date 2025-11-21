@@ -1,5 +1,30 @@
 local M = {}
 
+--- Update effects pool with new animation settings
+local function update_effects_pool(config)
+  local Effect = require("tiny-glimmer.animation.effect")
+  local effects_pool = require("tiny-glimmer.premade_effects")
+  
+  for name, effect_settings in pairs(config.animations) do
+    if not effects_pool[name] then
+      effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
+    else
+      effects_pool[name]:update_settings(effect_settings)
+    end
+  end
+  
+  return effects_pool
+end
+
+--- Prepare configuration by merging user options with defaults and sanitizing highlights
+function M.prepare_config(user_options)
+  local defaults = require("tiny-glimmer.config.defaults")
+  local highlights = require("tiny-glimmer.config.highlights")
+  
+  local config = vim.tbl_deep_extend("force", defaults, user_options or {})
+  return highlights.sanitize_highlights(config)
+end
+
 local function setup_hijacks(config, custom_remap_fn)
   -- stylua: ignore start
   if config.overwrite.auto_map then
@@ -39,27 +64,15 @@ local function setup_hijacks(config, custom_remap_fn)
 end
 
 function M.initialize(user_options)
-  local defaults = require("tiny-glimmer.config.defaults")
   local highlights = require("tiny-glimmer.config.highlights")
   local AnimationFactory = require("tiny-glimmer.animation.factory")
-  local Effect = require("tiny-glimmer.animation.effect")
-  local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_group
+  local namespace = require("tiny-glimmer.namespace").animation_group
 
-  -- Merge configuration
-  local config = vim.tbl_deep_extend("force", defaults, user_options or {})
-
-  -- Sanitize highlights
-  highlights.sanitize_highlights(config)
+  -- Prepare configuration
+  local config = M.prepare_config(user_options)
 
   -- Setup effects pool
-  local effects_pool = require("tiny-glimmer.premade_effects")
-  for name, effect_settings in pairs(config.animations) do
-    if not effects_pool[name] then
-      effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
-    else
-      effects_pool[name]:update_settings(effect_settings)
-    end
-  end
+  local effects_pool = update_effects_pool(config)
 
   -- Initialize support modules
   for support_name, support_settings in pairs(config.support) do
@@ -154,6 +167,7 @@ function M.initialize(user_options)
     vim.api.nvim_create_autocmd("ColorScheme", {
       group = namespace,
       callback = function()
+        print("TinyGlimmer: Reloading highlights due to colorscheme change")
         require("tiny-glimmer").apply()
       end,
     })

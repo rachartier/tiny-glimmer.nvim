@@ -2,8 +2,11 @@ local utils = require("tiny-glimmer.utils")
 
 local M = {}
 
-local hl_visual_bg = utils.int_to_hex(utils.get_highlight("Visual").bg)
-local hl_normal_bg = utils.int_to_hex(utils.get_highlight("Normal").bg)
+--- Get default fallback color for transparent backgrounds
+local function get_fallback_color(is_from_color)
+  local highlight_name = is_from_color and "Visual" or "Normal"
+  return utils.int_to_hex(utils.get_highlight(highlight_name).bg)
+end
 
 --- Process a single highlight color reference
 --- @param color string|nil Hex color or highlight group name
@@ -27,17 +30,19 @@ function M.process_highlight_color(color, highlight_name, is_from_color, options
       or utils.get_highlight("Normal").bg == "None"
 
     if not is_transparent then
-      local default_highlight = is_from_color and "Visual" or "Normal"
       if not options.disable_warnings then
-        local msg = string.format(
-          "TinyGlimmer: %s_color is set to None for %s animation\nDefaulting to %s highlight",
-          is_from_color and "from" or "to",
-          highlight_name,
-          default_highlight
+        local default_hl = is_from_color and "Visual" or "Normal"
+        vim.notify(
+          string.format(
+            "TinyGlimmer: %s_color is set to None for %s animation\nDefaulting to %s highlight",
+            is_from_color and "from" or "to",
+            highlight_name,
+            default_hl
+          ),
+          vim.log.levels.WARN
         )
-        vim.notify(msg, vim.log.levels.WARN)
       end
-      return is_from_color and hl_visual_bg or hl_normal_bg
+      return get_fallback_color(is_from_color)
     end
     return "#000000"
   end
@@ -47,12 +52,16 @@ end
 
 --- Process animation colors for table-based animation config
 local function process_animation_colors(animation, name, options)
-  if type(animation) == "table" then
-    animation.settings.from_color =
-      M.process_highlight_color(animation.settings.from_color, name, true, options)
-    animation.settings.to_color =
-      M.process_highlight_color(animation.settings.to_color, name, false, options)
+  if type(animation) ~= "table" then
+    return animation
   end
+
+  local new_animation = vim.deepcopy(animation)
+  new_animation.settings.from_color =
+    M.process_highlight_color(new_animation.settings.from_color, name, true, options)
+  new_animation.settings.to_color =
+    M.process_highlight_color(new_animation.settings.to_color, name, false, options)
+  return new_animation
 end
 
 --- Validate transparency configuration
@@ -71,32 +80,28 @@ end
 
 --- Sanitize all highlights in configuration
 --- @param options table Full plugin configuration
+--- @return table New configuration with sanitized highlights
 function M.sanitize_highlights(options)
   M.validate_transparency(options)
 
+  local sanitized = vim.deepcopy(options)
+
   -- Process animation colors
-  for name, highlight in pairs(options.animations) do
-    highlight.from_color = M.process_highlight_color(highlight.from_color, name, true, options)
-    highlight.to_color = M.process_highlight_color(highlight.to_color, name, false, options)
+  for name, highlight in pairs(sanitized.animations) do
+    highlight.from_color = M.process_highlight_color(highlight.from_color, name, true, sanitized)
+    highlight.to_color = M.process_highlight_color(highlight.to_color, name, false, sanitized)
   end
 
-  -- Process preset colors
-  for name, preset in pairs(options.presets) do
-    if preset.default_animation then
-      if type(preset.default_animation) == "table" then
-        process_animation_colors(preset.default_animation, name, options)
-      end
-    end
-  end
-
-  -- Process overwrite and support colors
-  for _, category in ipairs({ options.overwrite, options.support }) do
+  -- Process preset, overwrite, and support colors
+  for _, category in ipairs({ sanitized.presets, sanitized.overwrite, sanitized.support }) do
     for name, preset in pairs(category) do
-      if type(preset) == "table" and preset.default_animation then
-        process_animation_colors(preset.default_animation, name, options)
+      if type(preset) == "table" and preset.default_animation and type(preset.default_animation) == "table" then
+        preset.default_animation = process_animation_colors(preset.default_animation, name, sanitized)
       end
     end
   end
+
+  return sanitized
 end
 
 return M

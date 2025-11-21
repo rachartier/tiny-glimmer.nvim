@@ -52,10 +52,15 @@ T["sanitize_highlights"]["processes animation colors"] = function()
     support = {},
   }
 
-  highlights.sanitize_highlights(config)
+  local original_config = vim.deepcopy(config)
+  local sanitized = highlights.sanitize_highlights(config)
 
-  MiniTest.expect.equality(type(config.animations.test_anim.from_color), "string")
-  MiniTest.expect.equality(type(config.animations.test_anim.to_color), "string")
+  MiniTest.expect.equality(type(sanitized.animations.test_anim.from_color), "string")
+  MiniTest.expect.equality(type(sanitized.animations.test_anim.to_color), "string")
+
+  -- Ensure original config is not modified
+  MiniTest.expect.equality(config.animations.test_anim.from_color, original_config.animations.test_anim.from_color)
+  MiniTest.expect.equality(config.animations.test_anim.to_color, original_config.animations.test_anim.to_color)
 end
 
 T["sanitize_highlights"]["handles preset default_animation as string"] = function()
@@ -77,10 +82,10 @@ T["sanitize_highlights"]["handles preset default_animation as string"] = functio
     support = {},
   }
 
-  highlights.sanitize_highlights(config)
+  local sanitized = highlights.sanitize_highlights(config)
 
   -- default_animation should remain as string
-  MiniTest.expect.equality(config.presets.test_preset.default_animation, "fade")
+  MiniTest.expect.equality(sanitized.presets.test_preset.default_animation, "fade")
 end
 
 T["sanitize_highlights"]["handles preset default_animation as table"] = function()
@@ -103,14 +108,14 @@ T["sanitize_highlights"]["handles preset default_animation as table"] = function
     support = {},
   }
 
-  highlights.sanitize_highlights(config)
+  local sanitized = highlights.sanitize_highlights(config)
 
   MiniTest.expect.equality(
-    type(config.presets.test_preset.default_animation.settings.from_color),
+    type(sanitized.presets.test_preset.default_animation.settings.from_color),
     "string"
   )
   MiniTest.expect.equality(
-    type(config.presets.test_preset.default_animation.settings.to_color),
+    type(sanitized.presets.test_preset.default_animation.settings.to_color),
     "string"
   )
 end

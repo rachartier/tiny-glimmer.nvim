@@ -42,18 +42,21 @@ function M.change_hl(animation_name, hl)
     for _, animation in pairs(config.animations) do
       change_animation_hl(animation, hl)
     end
-    highlights.sanitize_highlights(config)
+    local glimmer = require("tiny-glimmer")
+    glimmer.config = highlights.sanitize_highlights(config)
     return
   end
 
   if type(animation_name) == "table" then
     for _, name in ipairs(animation_name) do
-      if not config.animations[name] then
+      if config.animations[name] then
+        change_animation_hl(config.animations[name], hl)
+      else
         vim.notify("TinyGlimmer: Animation " .. name .. " not found. Skipping", vim.log.levels.WARN)
       end
-      M.change_hl(name, hl)
     end
-    highlights.sanitize_highlights(config)
+    local glimmer = require("tiny-glimmer")
+    glimmer.config = highlights.sanitize_highlights(config)
     return
   end
 
@@ -65,7 +68,8 @@ function M.change_hl(animation_name, hl)
   local animation = config.animations[animation_name]
   change_animation_hl(animation, hl)
   config.animations[animation_name] = animation
-  highlights.sanitize_highlights(config)
+  local glimmer = require("tiny-glimmer")
+  glimmer.config = highlights.sanitize_highlights(config)
 end
 
 --- Get the background highlight color for the given highlight name
@@ -165,9 +169,28 @@ end
 
 --- Refresh highlights after theme change
 function M.apply()
-  local config = get_config()
-  local highlights = require("tiny-glimmer.config.highlights")
-  highlights.sanitize_highlights(config)
+  local glimmer = require("tiny-glimmer")
+  local setup = require("tiny-glimmer.setup")
+  local AnimationFactory = require("tiny-glimmer.animation.factory")
+  
+  -- Re-prepare config with fresh highlight values
+  local config = setup.prepare_config(glimmer.user_config)
+  
+  -- Update effects pool
+  local effects_pool = require("tiny-glimmer.premade_effects")
+  local Effect = require("tiny-glimmer.animation.effect")
+  for name, effect_settings in pairs(config.animations) do
+    if effects_pool[name] then
+      effects_pool[name]:update_settings(effect_settings)
+    else
+      effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
+    end
+  end
+  
+  -- Re-initialize animation factory
+  AnimationFactory.initialize(config, effects_pool, config.refresh_interval_ms)
+  
+  glimmer.config = config
 end
 
 return M

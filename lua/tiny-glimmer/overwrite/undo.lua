@@ -81,10 +81,18 @@ local function setup_change_detector(opts)
       return true
     end
 
+    local row_delta = new_end_row - old_end_row
+    local col_delta = new_end_col - old_end_col
+
+    shift_ranges(ranges, start_row, start_col, row_delta, col_delta)
+
+    if new_end_row == 0 and new_end_col == 0 then
+      return
+    end
+
     local end_row = start_row + new_end_row
     local end_col = start_col + new_end_col
 
-    -- Safety: Clamp end_col to actual line length to prevent API errors on the last line
     local line_count = vim.api.nvim_buf_line_count(bufnr)
     if end_row < line_count then
       local line = vim.api.nvim_buf_get_lines(bufnr, end_row, end_row + 1, true)[1]
@@ -92,11 +100,6 @@ local function setup_change_detector(opts)
         end_col = math.min(end_col, #line)
       end
     end
-
-    local row_delta = new_end_row - old_end_row
-    local col_delta = new_end_col - old_end_col
-
-    shift_ranges(ranges, start_row, start_col, row_delta, col_delta)
 
     if start_row == end_row and start_col == end_col then
       end_col = end_col + 1

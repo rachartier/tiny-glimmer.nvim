@@ -143,4 +143,9 @@ function M.redo(opts)
   handle_operation(opts)
 end
 
+M._test = {
+  merge_ranges = merge_ranges,
+  shift_ranges = shift_ranges,
+}
+
 return M

@@ -1,5 +1,3 @@
-local utils = require("tiny-glimmer.utils")
-
 return {
   enabled = true,
   disable_warnings = true,

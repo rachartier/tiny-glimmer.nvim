@@ -1,143 +1,120 @@
 local M = {}
 
----Remove overlapping portions from ranges
----@param ranges table[] List of {start_line, start_col, end_line, end_col} ranges
----@return table[] Non-overlapping ranges
+---Standard interval merge algorithm
+---@param ranges table[]
+---@return table[]
 local function merge_ranges(ranges)
-  if #ranges == 0 then
-    return {}
+  if #ranges < 2 then
+    return ranges
   end
 
-  -- Sort ranges by start line and then by start column
   table.sort(ranges, function(a, b)
-    if a.start_line == b.start_line then
-      return a.start_col < b.start_col
+    if a.start_line ~= b.start_line then
+      return a.start_line < b.start_line
     end
-    return a.start_line < b.start_line
+    return a.start_col < b.start_col
   end)
 
-  local final_ranges = {}
+  local merged = { ranges[1] }
 
-  for _, range in ipairs(ranges) do
-    -- Only add non-empty ranges
-    if range.start_line == range.end_line and range.start_col == range.end_col then
-      goto continue
-    end
+  for i = 2, #ranges do
+    local curr = ranges[i]
+    local prev = merged[#merged]
 
-    -- Check for overlap with previous ranges and adjust
-    local adjusted_range = {
-      start_line = range.start_line,
-      start_col = range.start_col,
-      end_line = range.end_line,
-      end_col = range.end_col,
-    }
+    -- Overlap logic: checks if current starts before (or at) previous ends
+    local is_overlap = curr.start_line < prev.end_line
+      or (curr.start_line == prev.end_line and curr.start_col <= prev.end_col)
 
-    for _, prev_range in ipairs(final_ranges) do
-      -- Check if ranges are on the same line and overlap
-      if adjusted_range.start_line == prev_range.start_line and adjusted_range.end_line == prev_range.end_line then
-        -- Check if current range overlaps with previous range
-        if adjusted_range.start_col < prev_range.end_col and adjusted_range.end_col > prev_range.start_col then
-          -- Overlapping! Adjust the current range to start after the previous one
-          if adjusted_range.start_col < prev_range.end_col then
-            adjusted_range.start_col = prev_range.end_col
-          end
-        end
+    if is_overlap then
+      if
+        curr.end_line > prev.end_line
+        or (curr.end_line == prev.end_line and curr.end_col > prev.end_col)
+      then
+        prev.end_line = curr.end_line
+        prev.end_col = curr.end_col
       end
+    else
+      table.insert(merged, curr)
     end
-
-    -- Only add if still non-empty after adjustment
-    -- For multi-line ranges: check if different lines
-    -- For single-line ranges: check if different columns
-    local is_non_empty = adjusted_range.start_line < adjusted_range.end_line
-      or (adjusted_range.start_line == adjusted_range.end_line and adjusted_range.start_col < adjusted_range.end_col)
-    
-    if is_non_empty then
-      table.insert(final_ranges, adjusted_range)
-    end
-
-    ::continue::
   end
 
-  return final_ranges
+  return merged
 end
 
----Captures changes using on_bytes and triggers animation callback
----@param opts table Animation options
----@return function Function to call after operation completes
+---Shifts previously recorded ranges if a new change happens above them
+local function shift_ranges(ranges, start_row, start_col, row_delta, col_delta)
+  if row_delta == 0 and col_delta == 0 then
+    return
+  end
+
+  for _, r in ipairs(ranges) do
+    if r.start_line > start_row then
+      r.start_line = r.start_line + row_delta
+      r.end_line = r.end_line + row_delta
+    elseif row_delta == 0 and r.start_line == start_row and r.start_col >= start_col then
+      r.start_col = r.start_col + col_delta
+      r.end_col = r.end_col + col_delta
+    end
+  end
+end
+
 local function setup_change_detector(opts)
   local bufnr = vim.api.nvim_get_current_buf()
   local ranges = {}
-  local detach_listener = false
+  local detach = false
 
-  local function on_bytes(_, _, _, start_row, start_col, _, old_end_row, old_end_col, _, new_end_row, new_end_col, _)
-    if detach_listener then
+  local function on_bytes(
+    _,
+    _,
+    _,
+    start_row,
+    start_col,
+    _,
+    old_end_row,
+    old_end_col,
+    _,
+    new_end_row,
+    new_end_col,
+    _
+  )
+    if detach then
       return true
     end
 
-    local buffer_line_count = vim.api.nvim_buf_line_count(bufnr)
     local end_row = start_row + new_end_row
     local end_col = start_col + new_end_col
 
-    -- Adjust end column for changes at buffer end
-    if end_row >= buffer_line_count then
-      local last_line = vim.api.nvim_buf_get_lines(bufnr, -2, -1, false)[1]
-      if last_line then
-        end_col = #last_line
+    -- Safety: Clamp end_col to actual line length to prevent API errors on the last line
+    local line_count = vim.api.nvim_buf_line_count(bufnr)
+    if end_row < line_count then
+      local line = vim.api.nvim_buf_get_lines(bufnr, end_row, end_row + 1, true)[1]
+      if line then
+        end_col = math.min(end_col, #line)
       end
     end
 
-    -- Calculate the net change in text length
-    local old_len = old_end_col
-    local new_len = new_end_col
-    local delta = new_len - old_len
+    local row_delta = new_end_row - old_end_row
+    local col_delta = new_end_col - old_end_col
 
-    -- Adjust positions of all previously collected ranges that come after this change
-    if delta ~= 0 then
-      -- For single-line changes, adjust on same line
-      if start_row == end_row then
-        for _, prev_range in ipairs(ranges) do
-          if prev_range.start_line == start_row then
-            -- If previous range starts at or after this insertion, shift it
-            if prev_range.start_col >= start_col then
-              prev_range.start_col = prev_range.start_col + delta
-              prev_range.end_col = prev_range.end_col + delta
-            end
-          end
-        end
-      -- For multi-line changes, adjust all subsequent lines
-      elseif new_end_row > 0 then
-        local line_delta = new_end_row - old_end_row
-        for _, prev_range in ipairs(ranges) do
-          -- Shift all ranges on lines at or after the insertion point
-          if prev_range.start_line >= start_row then
-            prev_range.start_line = prev_range.start_line + line_delta
-            prev_range.end_line = prev_range.end_line + line_delta
-          end
-        end
-      end
+    shift_ranges(ranges, start_row, start_col, row_delta, col_delta)
+
+    if start_row == end_row and start_col == end_col then
+      end_col = end_col + 1
     end
 
-    local range = {
+    table.insert(ranges, {
       start_line = start_row,
       start_col = start_col,
       end_line = end_row,
       end_col = end_col,
-    }
-
-    -- Default: add the full range
-    table.insert(ranges, range)
+    })
   end
 
-  -- Attach buffer listener
-  vim.api.nvim_buf_attach(bufnr, false, {
-    on_bytes = on_bytes,
-  })
+  vim.api.nvim_buf_attach(bufnr, false, { on_bytes = on_bytes })
 
-  -- Return function to process collected ranges
   return function()
     vim.schedule(function()
-      detach_listener = true
-
+      detach = true
       local final_ranges = merge_ranges(ranges)
 
       if #final_ranges > 0 then
@@ -151,22 +128,16 @@ local function setup_change_detector(opts)
   end
 end
 
----Animate undo operation by capturing changes via on_bytes
----@param opts table Animation options
-function M.undo(opts)
-  local process_changes = setup_change_detector(opts)
-
-  -- Schedule processing after hijack executes
-  vim.schedule(process_changes)
+local function handle_operation(opts)
+  local process = setup_change_detector(opts)
+  vim.schedule(process)
 end
 
----Animate redo operation by capturing changes via on_bytes
----@param opts table Animation options
+function M.undo(opts)
+  handle_operation(opts)
+end
 function M.redo(opts)
-  local process_changes = setup_change_detector(opts)
-
-  -- Schedule processing after hijack executes
-  vim.schedule(process_changes)
+  handle_operation(opts)
 end
 
 return M

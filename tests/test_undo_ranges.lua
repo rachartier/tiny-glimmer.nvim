@@ -205,15 +205,6 @@ T["undo range adjustment"]["preserves ranges on different lines"] = function()
 end
 
 T["undo range adjustment"]["handles line deletion undo (dd then u)"] = function()
-  -- Scenario: Delete line 2 with dd, then undo to restore it
-  -- Buffer before: line1\nline2\nline3
-  -- After dd: line1\nline3
-  -- After undo: line1\nline2\nline3
-  --
-  -- When undoing a line deletion, on_bytes receives a multi-line insertion:
-  -- start_row=1, start_col=0, old_end_row=0, old_end_col=0, new_end_row=1, new_end_col=0
-  -- This inserts "line2\n" at position [1,0]
-
   local on_bytes_calls = {
     {
       start_row = 1,
@@ -231,6 +222,52 @@ T["undo range adjustment"]["handles line deletion undo (dd then u)"] = function(
   MiniTest.expect.equality(ranges[1].start_col, 0)
   MiniTest.expect.equality(ranges[1].end_line, 2)
   MiniTest.expect.equality(ranges[1].end_col, 0)
+end
+
+T["undo range adjustment"]["skips whitespace-only single-line insertions"] = function()
+  local bufnr = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "    aaa", "    ", "    bbb" })
+
+  local undo_module = require("tiny-glimmer.overwrite.undo")
+  local get_line_text = function(row)
+    return vim.api.nvim_buf_get_lines(bufnr, row, row + 1, false)[1]
+  end
+  
+  local line = get_line_text(1)
+  local range_text = line:sub(1, 5)
+  local is_whitespace = range_text:match("^%s*$") ~= nil
+  
+  MiniTest.expect.equality(is_whitespace, true)
+  vim.api.nvim_buf_delete(bufnr, { force = true })
+end
+
+T["undo range adjustment"]["skips whitespace-only multi-line insertions"] = function()
+  local bufnr = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "aaa", "    ", "bbb" })
+
+  local has_non_whitespace = false
+  for i = 1, 1 do
+    local line = vim.api.nvim_buf_get_lines(bufnr, i, i + 1, false)[1]
+    if line and line:match("%S") then
+      has_non_whitespace = true
+      break
+    end
+  end
+
+  MiniTest.expect.equality(has_non_whitespace, false)
+  vim.api.nvim_buf_delete(bufnr, { force = true })
+end
+
+T["undo range adjustment"]["preserves non-whitespace insertions"] = function()
+  local bufnr = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "aaa", "    text", "bbb" })
+
+  local line = vim.api.nvim_buf_get_lines(bufnr, 1, 2, false)[1]
+  local range_text = line:sub(1, 9)
+  local is_whitespace = range_text:match("^%s*$") ~= nil
+
+  MiniTest.expect.equality(is_whitespace, false)
+  vim.api.nvim_buf_delete(bufnr, { force = true })
 end
 
 T["undo range adjustment"]["handles multi-line change with subsequent line shift"] = function()

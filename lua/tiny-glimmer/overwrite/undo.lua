@@ -1,66 +1,136 @@
 local M = {}
 
----Standard interval merge algorithm
----@param ranges table[]
----@return table[]
-local function merge_ranges(ranges)
-  if #ranges < 2 then
-    return ranges
+-- Assumes ranges are sorted and disjunct
+local function sorted_ranges_disjunct(r1, r2)
+  if r1.end_line < r2.start_line then
+    return true
+  elseif r1.end_line == r2.start_line then
+    return r1.end_col < r2.start_col
   end
-
-  table.sort(ranges, function(a, b)
-    if a.start_line ~= b.start_line then
-      return a.start_line < b.start_line
-    end
-    return a.start_col < b.start_col
-  end)
-
-  local merged = { ranges[1] }
-
-  for i = 2, #ranges do
-    local curr = ranges[i]
-    local prev = merged[#merged]
-
-    -- Overlap logic: checks if current starts before (or at) previous ends
-    local is_overlap = curr.start_line < prev.end_line
-      or (curr.start_line == prev.end_line and curr.start_col <= prev.end_col)
-
-    if is_overlap then
-      if
-        curr.end_line > prev.end_line
-        or (curr.end_line == prev.end_line and curr.end_col > prev.end_col)
-      then
-        prev.end_line = curr.end_line
-        prev.end_col = curr.end_col
-      end
-    else
-      table.insert(merged, curr)
-    end
-  end
-
-  return merged
+  return false
 end
 
----Shifts previously recorded ranges if a new change happens above them
-local function shift_ranges(ranges, start_row, start_col, row_delta, col_delta)
-  if row_delta == 0 and col_delta == 0 then
+local function range_starts_before(r1, r2)
+  if r1.start_line < r2.start_line then
+    return true
+  elseif r1.start_line == r2.start_line then
+    return r1.start_col <= r2.start_col
+  end
+  return false
+end
+
+local function range_ends_after(r1, r2)
+  if r1.end_line > r2.end_line then
+    return true
+  elseif r1.end_line == r2.end_line then
+    return r1.end_col > r2.end_col
+  end
+  return false
+end
+
+local function empty_range(range)
+  return range.start_line > range.end_line or (range.start_line == range.end_line and range.start_col >= range.end_col)
+end
+
+-- Search and insert the old range and modify all existing ranges according to the change
+local function insert_range(ranges, old_range, new_range)
+  if empty_range(old_range) and empty_range(new_range) then
     return
   end
 
-  for _, r in ipairs(ranges) do
-    if r.start_line > start_row then
-      r.start_line = r.start_line + row_delta
-      r.end_line = r.end_line + row_delta
-    elseif row_delta == 0 and r.start_line == start_row and r.start_col >= start_col then
-      r.start_col = r.start_col + col_delta
-      r.end_col = r.end_col + col_delta
-    end
+  local i = 1
+  while range_starts_before(ranges[i], old_range) do
+    i = i + 1
   end
+
+  -- Insert and merge with previous and following merges if needed
+  -- There is at most one merge with a previous range (ranges were sorted and disjunct before insertion)
+  if sorted_ranges_disjunct(ranges[i - 1], old_range) then
+    table.insert(ranges, i, vim.deepcopy(old_range))
+  else
+    if range_ends_after(old_range, ranges[i - 1]) then
+      -- new range not completely contained in the previous one
+      ranges[i - 1].end_line = old_range.end_line
+      ranges[i - 1].end_col = old_range.end_col
+    end
+    i = i - 1
+  end
+
+  -- There are possibly many merges with following ranges
+  while not sorted_ranges_disjunct(ranges[i], ranges[i + 1]) do
+    if range_ends_after(ranges[i + 1], ranges[i]) then
+      ranges[i].end_line = ranges[i + 1].end_line
+      ranges[i].end_col = ranges[i + 1].end_col
+    end
+    table.remove(ranges, i + 1)
+  end
+
+  -- Shift all ranges after the change (if needed)
+  local delta_line = new_range.end_line - old_range.end_line
+  local delta_col = new_range.end_col - old_range.end_col
+  if delta_line == 0 and delta_col == 0 then
+    return
+  end
+
+  -- This range is always guaranteed to contain both the start and the end of the changed text
+  -- therefore we compare to the end
+  if ranges[i].end_line == old_range.end_line then
+    ranges[i].end_col = ranges[i].end_col + delta_col
+  end
+  ranges[i].end_line = ranges[i].end_line + delta_line
+  if empty_range(ranges[i]) then
+    table.remove(ranges, i)
+  else
+    i = i + 1
+  end
+
+  -- All following (disjunct) ranges are after the change either on the same line or not
+  -- therefore we compare to the start
+  for j = i, #ranges - 1 do
+    if ranges[j].start_line == old_range.end_line then
+      ranges[j].start_col = ranges[j].start_col + delta_col
+    end
+    if ranges[j].end_line == old_range.end_line then
+      ranges[j].end_col = ranges[j].end_col + delta_col
+    end
+    ranges[j].start_line = ranges[j].start_line + delta_line
+    ranges[j].end_line = ranges[j].end_line + delta_line
+  end
+end
+
+local function add_guards(ranges)
+  table.insert(ranges, 1, {
+    start_line = -1, start_col = -1,
+    end_line = -1, end_col = -1,
+  })
+  table.insert(ranges, {
+    start_line = math.huge, start_col = math.huge,
+    end_line = math.huge, end_col = math.huge,
+  })
+  return ranges
+end
+
+local function remove_guards(ranges)
+  table.remove(ranges, 1)
+  table.remove(ranges, #ranges)
+  return ranges
+end
+
+local function offset2range(start_row, start_col, offset_row, offset_col)
+  return {
+    start_line = start_row,
+    start_col = start_col,
+    end_line = start_row + offset_row,
+    -- `:h nvim_buf_attach`
+    end_col = (offset_row == 0 and start_col or 0) + offset_col,
+  }
 end
 
 local function setup_change_detector(opts)
   local bufnr = vim.api.nvim_get_current_buf()
-  local ranges = {}
+  -- Sorted list of disjunct recorded ranges with guards to simplify implementation
+  -- Ranges are inclusive for lines and exclusive for columns
+  local ranges = add_guards {}
   local detach = false
 
   local function on_bytes(
@@ -81,36 +151,9 @@ local function setup_change_detector(opts)
       return true
     end
 
-    local row_delta = new_end_row - old_end_row
-    local col_delta = new_end_col - old_end_col
-
-    shift_ranges(ranges, start_row, start_col, row_delta, col_delta)
-
-    if new_end_row == 0 and new_end_col == 0 then
-      return
-    end
-
-    local end_row = start_row + new_end_row
-    local end_col = start_col + new_end_col
-
-    local line_count = vim.api.nvim_buf_line_count(bufnr)
-    if end_row < line_count then
-      local line = vim.api.nvim_buf_get_lines(bufnr, end_row, end_row + 1, true)[1]
-      if line then
-        end_col = math.min(end_col, #line)
-      end
-    end
-
-    if start_row == end_row and start_col == end_col then
-      end_col = end_col + 1
-    end
-
-    table.insert(ranges, {
-      start_line = start_row,
-      start_col = start_col,
-      end_line = end_row,
-      end_col = end_col,
-    })
+    local old_range = offset2range(start_row, start_col, old_end_row, old_end_col)
+    local new_range = offset2range(start_row, start_col, new_end_row, new_end_col)
+    insert_range(ranges, old_range, new_range)
   end
 
   vim.api.nvim_buf_attach(bufnr, false, { on_bytes = on_bytes })
@@ -118,13 +161,11 @@ local function setup_change_detector(opts)
   return function()
     vim.schedule(function()
       detach = true
-      local final_ranges = merge_ranges(ranges)
-
-      if #final_ranges > 0 then
+      if #ranges > 2 then
         require("tiny-glimmer.animation.factory")
           .get_instance()
           :create_text_animation(opts.default_animation, {
-            base = { ranges = final_ranges },
+            base = { ranges = remove_guards(ranges) },
           })
       end
     end)
@@ -144,8 +185,9 @@ function M.redo(opts)
 end
 
 M._test = {
-  merge_ranges = merge_ranges,
-  shift_ranges = shift_ranges,
+  add_guards = add_guards,
+  remove_guards = remove_guards,
+  insert_range = insert_range,
 }
 
 return M

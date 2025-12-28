@@ -134,7 +134,7 @@ function M.Paste()
   local config = get_config()
   if not config.overwrite.paste.enabled then
     vim.notify(
-      'TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use require("tiny-glimmer").Paste.',
+      'TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use require("tiny-glimmer").Paste().',
       vim.log.levels.WARN
     )
     return
@@ -172,10 +172,10 @@ function M.apply()
   local glimmer = require("tiny-glimmer")
   local setup = require("tiny-glimmer.setup")
   local AnimationFactory = require("tiny-glimmer.animation.factory")
-  
+
   -- Re-prepare config with fresh highlight values
   local config = setup.prepare_config(glimmer.user_config)
-  
+
   -- Update effects pool
   local effects_pool = require("tiny-glimmer.premade_effects")
   local Effect = require("tiny-glimmer.animation.effect")
@@ -186,10 +186,10 @@ function M.apply()
       effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
     end
   end
-  
+
   -- Re-initialize animation factory
   AnimationFactory.initialize(config, effects_pool, config.refresh_interval_ms)
-  
+
   glimmer.config = config
 end
 

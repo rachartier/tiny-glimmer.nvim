@@ -137,7 +137,8 @@ function GlimmerAnimation:update_effect(progress)
 
   local updated_color, updated_animation_progress = effect:update_fn(progress, easing)
 
-  api.nvim_set_hl(0, hl_group, { bg = updated_color })
+  api.nvim_set_hl(0, hl_group, vim.tbl_extend("error",
+    { bg = updated_color }, effect.settings.font_style or {}))
 
   -- Handle overwrite colors if specified
   if self.overwrite_from_color or self.overwrite_to_color then
@@ -148,7 +149,8 @@ function GlimmerAnimation:update_effect(progress)
     effect.settings.to_color = self.overwrite_to_color or default_settings.to_color
 
     local updated_color_overwrite = effect:update_fn(progress, easing)
-    api.nvim_set_hl(0, overwrite_hl_group, { bg = updated_color_overwrite })
+    api.nvim_set_hl(0, hl_group, vim.tbl_extend("error",
+      { bg = updated_color_overwrite }, effect.settings.font_style or {}))
 
     -- Restore original colors
     effect.settings.from_color = default_settings.from_color

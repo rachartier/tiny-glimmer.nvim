@@ -221,9 +221,10 @@ require("tiny-glimmer").setup({
             max_duration = 400,              -- Maximum animation duration in ms
             min_duration = 300,              -- Minimum animation duration in ms
             easing = "outQuad",              -- Easing function
-            chars_for_max_duration = 10,    -- Character count for max duration
+            chars_for_max_duration = 10,     -- Character count for max duration
             from_color = "Visual",           -- Start color (highlight group or hex)
             to_color = "Normal",             -- End color (highlight group or hex)
+            font_style = {},                 -- Additional font styling (e.g. { bold = true }, see `:h nvim_set_hl`)
         },
         reverse_fade = {
             max_duration = 380,
@@ -232,6 +233,7 @@ require("tiny-glimmer").setup({
             chars_for_max_duration = 10,
             from_color = "Visual",
             to_color = "Normal",
+            font_style = {},
         },
         bounce = {
             max_duration = 500,
@@ -240,6 +242,7 @@ require("tiny-glimmer").setup({
             oscillation_count = 1,          -- Number of bounces
             from_color = "Visual",
             to_color = "Normal",
+            font_style = {},
         },
         left_to_right = {
             max_duration = 350,
@@ -249,6 +252,7 @@ require("tiny-glimmer").setup({
             lingering_time = 50,            -- Time to linger after completion
             from_color = "Visual",
             to_color = "Normal",
+            font_style = {},
         },
         pulse = {
             max_duration = 600,
@@ -258,12 +262,14 @@ require("tiny-glimmer").setup({
             intensity = 1.2,                -- Pulse intensity
             from_color = "Visual",
             to_color = "Normal",
+            font_style = {},
         },
         rainbow = {
             max_duration = 600,
             min_duration = 350,
             chars_for_max_duration = 20,
             -- Note: Rainbow animation does not use from_color/to_color
+            font_style = {},
         },
 
         -- Custom animation example

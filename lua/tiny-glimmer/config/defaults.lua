@@ -102,6 +102,7 @@ return {
       chars_for_max_duration = 10,
       from_color = "Visual",
       to_color = "Normal",
+      font_style = {},
     },
     reverse_fade = {
       max_duration = 380,
@@ -110,6 +111,7 @@ return {
       chars_for_max_duration = 10,
       from_color = "Visual",
       to_color = "Normal",
+      font_style = {},
     },
     bounce = {
       max_duration = 500,
@@ -118,6 +120,7 @@ return {
       oscillation_count = 1,
       from_color = "Visual",
       to_color = "Normal",
+      font_style = {},
     },
     left_to_right = {
       max_duration = 350,
@@ -127,6 +130,7 @@ return {
       chars_for_max_duration = 25,
       from_color = "Visual",
       to_color = "Normal",
+      font_style = {},
     },
     pulse = {
       max_duration = 600,
@@ -136,17 +140,20 @@ return {
       intensity = 1.2,
       from_color = "Visual",
       to_color = "Normal",
+      font_style = {},
     },
     rainbow = {
       max_duration = 600,
       min_duration = 350,
       chars_for_max_duration = 20,
+      font_style = {},
     },
     custom = {
       max_duration = 350,
       min_duration = 200,
       chars_for_max_duration = 40,
       color = "Visual",
+      font_style = {},
 
       effect = function(self, progress)
         return self.settings.color, progress

@@ -1,4 +1,4 @@
-*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2026 January 17
+*tiny-glimmer.nvim.txt*    For Neovim >= 0.10.0   Last change: 2026 January 19
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*

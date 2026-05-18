@@ -16,8 +16,15 @@ function M.normalize_color(color)
   if color:match("^#") then
     return color
   end
-  -- It's a highlight group
-  return utils.int_to_hex(utils.get_highlight(color).bg or 0)
+  local bg = utils.get_highlight(color).bg
+  if bg == nil then
+    local config = require("tiny-glimmer").config
+    if config and config.transparency_color then
+      return config.transparency_color
+    end
+    return "#000000"
+  end
+  return utils.int_to_hex(bg)
 end
 
 --- Check if the plugin is enabled

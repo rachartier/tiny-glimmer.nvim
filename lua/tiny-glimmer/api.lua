@@ -80,92 +80,35 @@ function M.get_background_hl(hl_name)
   return utils.int_to_hex(utils.get_highlight(hl_name).bg)
 end
 
---- Search navigation methods
-function M.search_next()
-  local config = get_config()
-  if not config.overwrite.search.enabled then
-    vim.notify(
-      'TinyGlimmer: Search is not enabled in your configuration.\nYou should not use require("tiny-glimmer").search_next().',
-      vim.log.levels.WARN
-    )
-    return
+--- Build a function that runs an overwrite module function, warning if its section is disabled
+--- @param section string Key in config.overwrite
+--- @param module string Module name under tiny-glimmer.overwrite
+--- @param fn_name string Function name in the module (also the public API name)
+local function guarded(section, module, fn_name)
+  return function()
+    local config = get_config()
+    if not config.overwrite[section].enabled then
+      vim.notify(
+        string.format(
+          'TinyGlimmer: %s is not enabled in your configuration.\nYou should not use require("tiny-glimmer").%s().',
+          section:gsub("^%l", string.upper),
+          fn_name
+        ),
+        vim.log.levels.WARN
+      )
+      return
+    end
+    require("tiny-glimmer.overwrite." .. module)[fn_name](config.overwrite[section])
   end
-  require("tiny-glimmer.overwrite.search").search_next(config.overwrite.search)
 end
 
-function M.search_prev()
-  local config = get_config()
-  if not config.overwrite.search.enabled then
-    vim.notify(
-      'TinyGlimmer: Search is not enabled in your configuration.\nYou should not use require("tiny-glimmer").search_prev().',
-      vim.log.levels.WARN
-    )
-    return
-  end
-  require("tiny-glimmer.overwrite.search").search_prev(config.overwrite.search)
-end
-
-function M.search_under_cursor()
-  local config = get_config()
-  if not config.overwrite.search.enabled then
-    vim.notify(
-      'TinyGlimmer: Search is not enabled in your configuration.\nYou should not use require("tiny-glimmer").search_under_cursor().',
-      vim.log.levels.WARN
-    )
-    return
-  end
-  require("tiny-glimmer.overwrite.search").search_under_cursor(config.overwrite.search)
-end
-
---- Paste methods
-function M.paste()
-  local config = get_config()
-  if not config.overwrite.paste.enabled then
-    vim.notify(
-      'TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use require("tiny-glimmer").paste().',
-      vim.log.levels.WARN
-    )
-    return
-  end
-  require("tiny-glimmer.overwrite.paste").paste(config.overwrite.paste)
-end
-
-function M.Paste()
-  local config = get_config()
-  if not config.overwrite.paste.enabled then
-    vim.notify(
-      'TinyGlimmer: Paste is not enabled in your configuration.\nYou should not use require("tiny-glimmer").Paste().',
-      vim.log.levels.WARN
-    )
-    return
-  end
-  require("tiny-glimmer.overwrite.paste").Paste(config.overwrite.paste)
-end
-
---- Undo/Redo methods
-function M.undo()
-  local config = get_config()
-  if not config.overwrite.undo.enabled then
-    vim.notify(
-      'TinyGlimmer: Undo is not enabled in your configuration.\nYou should not use require("tiny-glimmer").undo().',
-      vim.log.levels.WARN
-    )
-    return
-  end
-  require("tiny-glimmer.overwrite.undo").undo(config.overwrite.undo)
-end
-
-function M.redo()
-  local config = get_config()
-  if not config.overwrite.redo.enabled then
-    vim.notify(
-      'TinyGlimmer: Redo is not enabled in your configuration.\nYou should not use require("tiny-glimmer").redo().',
-      vim.log.levels.WARN
-    )
-    return
-  end
-  require("tiny-glimmer.overwrite.undo").redo(config.overwrite.redo)
-end
+M.search_next = guarded("search", "search", "search_next")
+M.search_prev = guarded("search", "search", "search_prev")
+M.search_under_cursor = guarded("search", "search", "search_under_cursor")
+M.paste = guarded("paste", "paste", "paste")
+M.Paste = guarded("paste", "paste", "Paste")
+M.undo = guarded("undo", "undo", "undo")
+M.redo = guarded("redo", "undo", "redo")
 
 --- Refresh highlights after theme change
 function M.apply()
@@ -176,16 +119,7 @@ function M.apply()
   -- Re-prepare config with fresh highlight values
   local config = setup.prepare_config(glimmer.user_config)
 
-  -- Update effects pool
-  local effects_pool = require("tiny-glimmer.premade_effects")
-  local Effect = require("tiny-glimmer.animation.effect")
-  for name, effect_settings in pairs(config.animations) do
-    if effects_pool[name] then
-      effects_pool[name]:update_settings(effect_settings)
-    else
-      effects_pool[name] = Effect.new(effect_settings, effect_settings.effect)
-    end
-  end
+  local effects_pool = setup.update_effects_pool(config)
 
   -- Re-initialize animation factory
   AnimationFactory.initialize(config, effects_pool, config.refresh_interval_ms)

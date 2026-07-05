@@ -123,7 +123,8 @@ function GlimmerAnimation:cleanup()
     api.nvim_buf_clear_namespace(buffer, namespace, range.start_line, range.end_line + 1)
   end
 
-  animation_pool_id = math.max(0, animation_pool_id - 1)
+  namespace_id_pool.release_ns_ids(ids)
+  self.reserved_ids = {}
 end
 
 ---Updates the animation effect based on progress
@@ -194,18 +195,13 @@ function GlimmerAnimation:get_reserved_id()
   return id
 end
 
--- Create a timer function that returns milliseconds since epoch
-local function get_time_ms()
-  return vim.uv.now()
-end
-
 ---Starts the animation
 ---@param refresh_interval_ms number Refresh interval in milliseconds
 ---@param length number Length of the content to animate
 ---@param callbacks { on_update: function, on_complete?: function } Callbacks for animation events
 function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
   self.active = true
-  self.start_time = get_time_ms()
+  self.start_time = vim.uv.now()
 
   -- Calculate total lines across all ranges
   local lines_count = 0
@@ -223,8 +219,22 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
     local defer_fn = vim.defer_fn
     local current_loop = 0
 
+    local function finish()
+      self:stop()
+      if on_complete then
+        on_complete()
+      end
+    end
+
+    local function next_frame()
+      defer_fn(function()
+        coroutine.resume(self.co)
+      end, refresh_interval_ms)
+      coroutine.yield()
+    end
+
     while self.active do
-      local elapsed_time = get_time_ms() - self.start_time
+      local elapsed_time = vim.uv.now() - self.start_time
 
       -- Calculate progress (clamped between 0 and 1)
       local progress = math.min(elapsed_time / duration, 1)
@@ -232,62 +242,25 @@ function GlimmerAnimation:start(refresh_interval_ms, length, callbacks)
 
       on_update(updated_animation_progress)
 
-      -- Check if animation is complete
-      if progress >= 1 then
-        -- Handle looping
+      if progress < 1 then
+        next_frame()
+      else
         if self.loop then
           current_loop = current_loop + 1
-          -- loop_count = 0 means infinite, otherwise check if we've looped enough
-          if self.loop_count == 0 or current_loop < self.loop_count then
-            -- Reset animation start time for next loop
-            self.start_time = get_time_ms()
-            defer_fn(function()
-              coroutine.resume(self.co)
-            end, refresh_interval_ms)
-            coroutine.yield()
-          else
-            -- Finished all loops
-            if lingering_time > 0 then
-              defer_fn(function()
-                self:stop()
-                if on_complete then
-                  on_complete()
-                end
-              end, lingering_time)
-              break
-            else
-              self:stop()
-              if on_complete then
-                on_complete()
-              end
-              break
-            end
-          end
-        else
-          -- Not looping, finish normally
-          if lingering_time > 0 then
-            defer_fn(function()
-              self:stop()
-              if on_complete then
-                on_complete()
-              end
-            end, lingering_time)
-            break
-          else
-            self:stop()
-            if on_complete then
-              on_complete()
-            end
-            break
-          end
         end
-      else
-        -- Schedule next frame
-        defer_fn(function()
-          coroutine.resume(self.co)
-        end, refresh_interval_ms)
 
-        coroutine.yield()
+        -- loop_count = 0 means infinite
+        if self.loop and (self.loop_count == 0 or current_loop < self.loop_count) then
+          self.start_time = vim.uv.now()
+          next_frame()
+        else
+          if lingering_time > 0 then
+            defer_fn(finish, lingering_time)
+          else
+            finish()
+          end
+          break
+        end
       end
     end
   end)

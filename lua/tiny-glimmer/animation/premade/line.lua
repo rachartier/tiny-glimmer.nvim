@@ -10,7 +10,6 @@ LineAnimation.__index = LineAnimation
 local utils = require("tiny-glimmer.utils")
 local namespace = require("tiny-glimmer.namespace").tiny_glimmer_animation_ns
 local AnimationEffect = require("tiny-glimmer.glimmer_animation")
-local namespace_id_pool = require("tiny-glimmer.namespace_id_pool")
 
 --- Creates anew LineAnimation Instance
 ---@param effect any The animiation effect implementation to use
@@ -46,7 +45,6 @@ function LineAnimation.new(effect, opts)
   end
 
   self.animation = AnimationEffect.new(effect, animation_opts)
-  self.reserved_ids = {}
 
   return self
 end
@@ -75,7 +73,7 @@ end
 function LineAnimation:start(refresh_interval_ms, on_complete)
   local length = self.animation.range.end_line - self.animation.range.start_line + 1
 
-  self.animation:start(refresh_interval_ms, length or 1, {
+  self.animation:start(refresh_interval_ms, length, {
     on_update = function(update_progress)
       vim.api.nvim_buf_clear_namespace(
         0,
@@ -88,12 +86,7 @@ function LineAnimation:start(refresh_interval_ms, on_complete)
         apply_hl(self, i + self.animation.range.start_line)
       end
     end,
-    on_complete = function()
-      namespace_id_pool.release_ns_ids(self.reserved_ids)
-      if on_complete then
-        on_complete()
-      end
-    end,
+    on_complete = on_complete,
   })
 end
 

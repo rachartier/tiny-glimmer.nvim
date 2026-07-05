@@ -95,23 +95,6 @@ T["utils"]["clamp handles negative ranges"] = function()
   MiniTest.expect.equality(utils.clamp(10, -100, 0), 0)
 end
 
-T["utils"]["get_range_last_modification returns range from marks"] = function()
-  local buf = H.make_buf({ "line 1", "line 2", "line 3" })
-  vim.api.nvim_set_current_buf(buf)
-
-  vim.api.nvim_buf_set_mark(buf, "[", 1, 2, {})
-  vim.api.nvim_buf_set_mark(buf, "]", 2, 5, {})
-
-  local range = utils.get_range_last_modification(buf)
-
-  MiniTest.expect.equality(range.start_line, 0)
-  MiniTest.expect.equality(range.start_col, 2)
-  MiniTest.expect.equality(range.end_line, 1)
-  MiniTest.expect.equality(range.end_col, 5)
-
-  vim.api.nvim_buf_delete(buf, { force = true })
-end
-
 T["utils"]["get_range_yank returns range from yank marks"] = function()
   local buf = H.make_buf({ "test line 1", "test line 2" })
   vim.api.nvim_set_current_buf(buf)
@@ -125,23 +108,6 @@ T["utils"]["get_range_yank returns range from yank marks"] = function()
   MiniTest.expect.equality(range.start_col, 2)
   MiniTest.expect.equality(range.end_line, 0)
   MiniTest.expect.equality(range.end_col, 7)
-
-  vim.api.nvim_buf_delete(buf, { force = true })
-end
-
-T["utils"]["get_visual_range_yank returns visual selection marks"] = function()
-  local buf = H.make_buf({ "line 1", "line 2", "line 3" })
-  vim.api.nvim_set_current_buf(buf)
-
-  vim.api.nvim_buf_set_mark(buf, "<", 1, 2, {})
-  vim.api.nvim_buf_set_mark(buf, ">", 2, 4, {})
-
-  local range = utils.get_visual_range_yank()
-
-  MiniTest.expect.equality(range.start_line, 1)
-  MiniTest.expect.equality(range.start_col, 2)
-  MiniTest.expect.equality(range.end_line, 2)
-  MiniTest.expect.equality(range.end_col, 4)
 
   vim.api.nvim_buf_delete(buf, { force = true })
 end
@@ -183,10 +149,6 @@ T["utils"]["set_extmark handles negative column numbers"] = function()
   MiniTest.expect.equality(type(extmark_id), "number")
 
   vim.api.nvim_buf_delete(buf, { force = true })
-end
-
-T["utils"]["max_number is valid 32-bit signed max"] = function()
-  MiniTest.expect.equality(utils.max_number, 2147483647)
 end
 
 return T

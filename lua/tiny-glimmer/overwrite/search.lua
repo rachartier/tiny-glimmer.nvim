@@ -48,13 +48,8 @@ function M.search_on_line(opts)
   search(opts, vim.fn.getreg("/"))
 end
 
-function M.search_next(opts)
-  search(opts, vim.fn.getreg("/"))
-end
-
-function M.search_prev(opts)
-  search(opts, vim.fn.getreg("/"))
-end
+M.search_next = M.search_on_line
+M.search_prev = M.search_on_line
 
 function M.search_under_cursor(opts)
   local word_under_cursor = vim.fn.expand("<cword>")

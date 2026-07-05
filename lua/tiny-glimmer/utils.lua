@@ -1,7 +1,5 @@
 local M = {}
 
-M.max_number = 2 ^ 31 - 1
-
 ---Converts an integer to a hex color string
 ---@param int number|nil The integer to convert
 ---@return string hex The resulting hex color or "None"
@@ -51,40 +49,12 @@ function M.rgb_to_hex(rgb_color)
   return string.format("#%02X%02X%02X", rgb_color.r, rgb_color.g, rgb_color.b)
 end
 
-function M.get_range_last_modification(buf)
-  if buf == nil then
-    buf = 0
-  end
-
-  local start_row, start_col = unpack(vim.api.nvim_buf_get_mark(buf, "["))
-  local end_row, end_col = unpack(vim.api.nvim_buf_get_mark(buf, "]"))
-
-  return {
-    start_line = start_row - 1,
-    start_col = start_col,
-    end_line = end_row - 1,
-    end_col = end_col,
-  }
-end
-
 function M.get_range_yank()
   return {
     start_line = vim.fn.line("'[") - 1,
     start_col = vim.fn.col("'[") - 1,
     end_line = vim.fn.line("']") - 1,
     end_col = vim.fn.col("']"),
-  }
-end
-
-function M.get_visual_range_yank()
-  local start_mark = vim.api.nvim_buf_get_mark(0, "<")
-  local end_mark = vim.api.nvim_buf_get_mark(0, ">")
-
-  return {
-    start_line = start_mark[1],
-    start_col = start_mark[2],
-    end_line = end_mark[1],
-    end_col = end_mark[2],
   }
 end
 

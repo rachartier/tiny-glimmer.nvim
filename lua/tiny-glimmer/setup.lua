@@ -1,7 +1,7 @@
 local M = {}
 
 --- Update effects pool with new animation settings
-local function update_effects_pool(config)
+function M.update_effects_pool(config)
   local Effect = require("tiny-glimmer.animation.effect")
   local effects_pool = require("tiny-glimmer.premade_effects")
   
@@ -72,7 +72,7 @@ function M.initialize(user_options)
   local config = M.prepare_config(user_options)
 
   -- Setup effects pool
-  local effects_pool = update_effects_pool(config)
+  local effects_pool = M.update_effects_pool(config)
 
   -- Initialize support modules
   for support_name, support_settings in pairs(config.support) do

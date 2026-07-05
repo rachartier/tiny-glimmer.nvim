@@ -111,39 +111,17 @@ function AnimationFactory:_manage_animation(animation_obj, buffer, on_complete)
     error("TinyGlimmer: Invalid animation object - missing range or start_line")
   end
 
-  local line_key = range_to_check.start_line
-
-  -- Ensure buffer entry exists
-  if not self.buffers[buffer] then
-    self.buffers[buffer] = { animations = {}, named_animations = {} }
-  end
-  if not self.buffers[buffer].animations then
-    self.buffers[buffer].animations = {}
-  end
-
-  -- Stop any existing animation on this line
-  local buf_data = self.buffers[buffer]
-  if buf_data and buf_data.animations and buf_data.animations[line_key] then
-    buf_data.animations[line_key]:stop()
-  end
-
-  -- Start new animation
-  buf_data = self.buffers[buffer]
-  if buf_data and buf_data.animations then
-    buf_data.animations[line_key] = animation_obj
-    animation_obj:start(self.animation_refresh, function()
-      local buf_data_callback = self.buffers[buffer]
-      if buf_data_callback and buf_data_callback.animations then
-        buf_data_callback.animations[line_key] = nil
-      end
-      if on_complete then
-        on_complete()
-      end
-    end)
-  end
+  self:_register_animation(
+    "animations",
+    range_to_check.start_line,
+    animation_obj,
+    buffer,
+    on_complete
+  )
 end
 
---- Manage animation lifecycle in a buffer
+--- Manage named animation lifecycle in a buffer
+--- @param name string Animation name
 --- @param animation_obj table Animation object
 --- @param buffer number Neovim buffer handle
 --- @param on_complete? function Optional callback when animation completes
@@ -152,34 +130,33 @@ function AnimationFactory:_manage_named_animation(name, animation_obj, buffer, o
     error("TinyGlimmer: Failed to create animation")
   end
 
-  -- Ensure buffer entry exists
+  self:_register_animation("named_animations", name, animation_obj, buffer, on_complete)
+end
+
+--- Store an animation under a key, stopping any previous one, and start it
+--- @param collection string "animations" or "named_animations"
+--- @param key string|number Line number or animation name
+function AnimationFactory:_register_animation(collection, key, animation_obj, buffer, on_complete)
   if not self.buffers[buffer] then
     self.buffers[buffer] = { animations = {}, named_animations = {} }
   end
-  if not self.buffers[buffer].named_animations then
-    self.buffers[buffer].named_animations = {}
+  self.buffers[buffer][collection] = self.buffers[buffer][collection] or {}
+  local animations = self.buffers[buffer][collection]
+
+  if animations[key] then
+    animations[key]:stop()
   end
 
-  -- Stop any existing animation on this line
-  local buf_data = self.buffers[buffer]
-  if buf_data and buf_data.named_animations and buf_data.named_animations[name] then
-    buf_data.named_animations[name]:stop()
-  end
-
-  -- Start new animation
-  buf_data = self.buffers[buffer]
-  if buf_data and buf_data.named_animations then
-    buf_data.named_animations[name] = animation_obj
-    animation_obj:start(self.animation_refresh, function()
-      local buf_data_callback = self.buffers[buffer]
-      if buf_data_callback and buf_data_callback.named_animations then
-        buf_data_callback.named_animations[name] = nil
-      end
-      if on_complete then
-        on_complete()
-      end
-    end)
-  end
+  animations[key] = animation_obj
+  animation_obj:start(self.animation_refresh, function()
+    local buf_data = self.buffers[buffer]
+    if buf_data and buf_data[collection] then
+      buf_data[collection][key] = nil
+    end
+    if on_complete then
+      on_complete()
+    end
+  end)
 end
 
 --- Create and launch a text animation

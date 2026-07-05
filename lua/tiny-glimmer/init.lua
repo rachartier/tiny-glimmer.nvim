@@ -9,20 +9,9 @@ function M.setup(user_options)
   M.user_config = user_options
   M.config = setup_module.initialize(user_options)
 
-  local api = require("tiny-glimmer.api")
-  M.enable = api.enable
-  M.disable = api.disable
-  M.toggle = api.toggle
-  M.change_hl = api.change_hl
-  M.get_background_hl = api.get_background_hl
-  M.search_next = api.search_next
-  M.search_prev = api.search_prev
-  M.search_under_cursor = api.search_under_cursor
-  M.paste = api.paste
-  M.Paste = api.Paste
-  M.undo = api.undo
-  M.redo = api.redo
-  M.apply = api.apply
+  for name, fn in pairs(require("tiny-glimmer.api")) do
+    M[name] = fn
+  end
 end
 
 --- Custom remap delegation (needed by external callers)

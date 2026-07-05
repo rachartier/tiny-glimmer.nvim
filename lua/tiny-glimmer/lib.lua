@@ -90,9 +90,10 @@ function M.create_effect(opts)
   return Effect.new(opts.settings or {}, opts.update_fn, opts.builder)
 end
 
---- Create a simple animation with minimal configuration
+--- Build the factory call arguments shared by all create functions
 ---@param opts SimpleAnimationOpts Animation options
-function M.create_animation(opts)
+---@return table animation_type, table factory_opts
+local function build_factory_args(opts)
   validate_animation_opts(opts)
 
   local animation_type = {
@@ -100,48 +101,28 @@ function M.create_animation(opts)
     settings = build_animation_settings(opts),
   }
 
-  local factory = AnimationFactory.get_instance()
-
-  local base = {}
-  if opts.ranges then
-    base.ranges = opts.ranges
-  else
-    base.range = opts.range
-  end
-
-  factory:create_text_animation(animation_type, {
-    base = base,
+  local factory_opts = {
+    base = opts.ranges and { ranges = opts.ranges } or { range = opts.range },
     on_complete = opts.on_complete,
     loop = opts.loop,
     loop_count = opts.loop_count,
-  })
+  }
+
+  return animation_type, factory_opts
+end
+
+--- Create a simple animation with minimal configuration
+---@param opts SimpleAnimationOpts Animation options
+function M.create_animation(opts)
+  local animation_type, factory_opts = build_factory_args(opts)
+  AnimationFactory.get_instance():create_text_animation(animation_type, factory_opts)
 end
 
 --- Create a line animation (highlights entire lines)
 ---@param opts SimpleAnimationOpts Animation options (start_col and end_col are ignored)
 function M.create_line_animation(opts)
-  validate_animation_opts(opts)
-
-  local animation_type = {
-    name = opts.effect or "fade",
-    settings = build_animation_settings(opts),
-  }
-
-  local factory = AnimationFactory.get_instance()
-
-  local base = {}
-  if opts.ranges then
-    base.ranges = opts.ranges
-  else
-    base.range = opts.range
-  end
-
-  factory:create_line_animation(animation_type, {
-    base = base,
-    on_complete = opts.on_complete,
-    loop = opts.loop,
-    loop_count = opts.loop_count,
-  })
+  local animation_type, factory_opts = build_factory_args(opts)
+  AnimationFactory.get_instance():create_line_animation(animation_type, factory_opts)
 end
 
 --- Create a text animation (highlights specific character ranges)
@@ -158,31 +139,8 @@ function M.create_named_animation(name, opts)
     error("TinyGlimmer: name is required for named animations")
   end
 
-  validate_animation_opts(opts)
-
-  local animation_type = {
-    name = opts.effect or "fade",
-    settings = build_animation_settings(opts),
-  }
-
-  local factory = AnimationFactory.get_instance()
-  local buffer = vim.api.nvim_get_current_buf()
-
-  local base = {}
-  if opts.ranges then
-    base.ranges = opts.ranges
-  else
-    base.range = opts.range
-  end
-
-  local effect = factory:_prepare_animation_effect(buffer, animation_type, { base = base })
-  local animation = require("tiny-glimmer.animation.premade.text").new(effect, {
-    base = base,
-    on_complete = opts.on_complete,
-    loop = opts.loop,
-    loop_count = opts.loop_count,
-  })
-  factory:_manage_named_animation(name, animation, buffer, opts.on_complete)
+  local animation_type, factory_opts = build_factory_args(opts)
+  AnimationFactory.get_instance():create_named_text_animation(name, animation_type, factory_opts)
 end
 
 --- Stop a named animation
@@ -323,139 +281,84 @@ function M.get_paragraph_range()
   }
 end
 
+--- Build SimpleAnimationOpts for a range from an effect config
+---@param effect string|table Effect name or effect configuration table
+---@param range AnimationRange The range to animate
+---@param opts table Optional settings override
+---@return table anim_opts
+local function build_anim_opts(effect, range, opts)
+  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
+
+  local anim_opts = Helpers.create_animation_settings(merged_settings, opts)
+  anim_opts.range = range
+  anim_opts.effect = effect_name
+  anim_opts.on_complete = opts.on_complete
+
+  return anim_opts
+end
+
+--- Run an animation helper: enabled and range checks, then create
+---@param create_fn function M.create_text_animation or M.create_line_animation
+---@param effect string|table Effect name or effect configuration table
+---@param range AnimationRange|nil The range to animate
+---@param opts? table Optional settings override
+local function animate(create_fn, effect, range, opts)
+  if not Helpers.check_enabled() or not range then
+    return
+  end
+
+  create_fn(build_anim_opts(effect, range, opts or {}))
+end
+
 --- Helper: Animate cursor line with an effect
 ---@param effect string|table Effect name or effect configuration table
 ---@param opts? table Optional settings override
 function M.cursor_line(effect, opts)
-  if not Helpers.check_enabled() then
-    return
-  end
-
-  opts = opts or {}
-  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-
-  M.create_line_animation({
-    range = M.get_line_range(0),
-    duration = merged_settings.max_duration or 300,
-    from_color = merged_settings.from_color or "Visual",
-    to_color = merged_settings.to_color or "Normal",
-    effect = effect_name,
-    easing = merged_settings.easing,
-    loop = opts.loop,
-    loop_count = opts.loop_count,
-  })
+  animate(M.create_line_animation, effect, M.get_line_range(0), opts)
 end
 
 --- Helper: Animate visual selection with an effect
 ---@param effect string|table Effect name or effect configuration table
 ---@param opts? table Optional settings override
 function M.visual_selection(effect, opts)
-  if not Helpers.check_enabled() then
-    return
-  end
-
-  local range = M.get_visual_range()
-  if not range then
-    return
-  end
-
-  opts = opts or {}
-  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-
-  M.create_text_animation({
-    range = range,
-    duration = merged_settings.max_duration or 300,
-    from_color = merged_settings.from_color or "Visual",
-    to_color = merged_settings.to_color or "Normal",
-    effect = effect_name,
-    easing = merged_settings.easing,
-  })
+  animate(M.create_text_animation, effect, M.get_visual_range(), opts)
 end
 
 --- Helper: Animate word under cursor
 ---@param effect string|table Effect name or effect configuration table
 ---@param opts? table Optional settings override
 function M.animate_word(effect, opts)
-  if not Helpers.check_enabled() then
-    return
-  end
-
-  local range = M.get_word_range()
-  if not range then
-    return
-  end
-
-  opts = opts or {}
-  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-
-  M.create_text_animation({
-    range = range,
-    duration = merged_settings.max_duration or 300,
-    from_color = merged_settings.from_color or "Visual",
-    to_color = merged_settings.to_color or "Normal",
-    effect = effect_name,
-    easing = merged_settings.easing,
-  })
+  animate(M.create_text_animation, effect, M.get_word_range(), opts)
 end
 
 --- Helper: Animate current paragraph
 ---@param effect string|table Effect name or effect configuration table
 ---@param opts? table Optional settings override
 function M.paragraph(effect, opts)
-  if not Helpers.check_enabled() then
-    return
-  end
-
-  opts = opts or {}
-  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-
-  M.create_line_animation({
-    range = M.get_paragraph_range(),
-    duration = merged_settings.max_duration or 300,
-    from_color = merged_settings.from_color or "Visual",
-    to_color = merged_settings.to_color or "Normal",
-    effect = effect_name,
-    easing = merged_settings.easing,
-  })
+  animate(M.create_line_animation, effect, M.get_paragraph_range(), opts)
 end
 
 --- Helper: Animate a specific range with an effect
 ---@param effect string|table Effect name or effect configuration table
----@param range AnimationRange The range to animate
+---@param range AnimationRange The range to animate (end_col = -1 means end of line)
 ---@param opts? table Optional settings override
 function M.animate_range(effect, range, opts)
   if not Helpers.check_enabled() then
     return
   end
 
-  opts = opts or {}
-  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-
-  -- Handle -1 for end_col (means end of line)
   local processed_range = vim.deepcopy(range)
   if processed_range.end_col == -1 then
-    local buf = vim.api.nvim_get_current_buf()
     local line = vim.api.nvim_buf_get_lines(
-      buf,
+      0,
       processed_range.end_line,
       processed_range.end_line + 1,
       false
     )[1]
-    if line then
-      processed_range.end_col = #line
-    else
-      processed_range.end_col = 0
-    end
+    processed_range.end_col = line and #line or 0
   end
 
-  M.create_text_animation({
-    range = processed_range,
-    duration = merged_settings.max_duration or 300,
-    from_color = merged_settings.from_color or "Visual",
-    to_color = merged_settings.to_color or "Normal",
-    effect = effect_name,
-    easing = merged_settings.easing,
-  })
+  animate(M.create_text_animation, effect, processed_range, opts)
 end
 
 --- Helper: Create a named animation for a range
@@ -468,75 +371,15 @@ function M.named_animate_range(name, effect, range, opts)
     return
   end
 
-  opts = opts or {}
-  local merged_settings, effect_name = Helpers.process_effect_config(effect, opts)
-
-  M.create_named_animation(name, {
-    range = range,
-    duration = merged_settings.max_duration or 300,
-    from_color = merged_settings.from_color or "Visual",
-    to_color = merged_settings.to_color or "Normal",
-    effect = effect_name,
-    easing = merged_settings.easing,
-    on_complete = opts.on_complete,
-    loop = opts.loop,
-    loop_count = opts.loop_count,
-  })
+  M.create_named_animation(name, build_anim_opts(effect, range, opts or {}))
 end
 
 --- Available easing functions
-M.easing = {
-  "linear",
-  "inQuad",
-  "outQuad",
-  "inOutQuad",
-  "outInQuad",
-  "inCubic",
-  "outCubic",
-  "inOutCubic",
-  "outInCubic",
-  "inQuart",
-  "outQuart",
-  "inOutQuart",
-  "outInQuart",
-  "inQuint",
-  "outQuint",
-  "inOutQuint",
-  "outInQuint",
-  "inSine",
-  "outSine",
-  "inOutSine",
-  "outInSine",
-  "inExpo",
-  "outExpo",
-  "inOutExpo",
-  "outInExpo",
-  "inCirc",
-  "outCirc",
-  "inOutCirc",
-  "outInCirc",
-  "inElastic",
-  "outElastic",
-  "inOutElastic",
-  "outInElastic",
-  "inBack",
-  "outBack",
-  "inOutBack",
-  "outInBack",
-  "inBounce",
-  "outBounce",
-  "inOutBounce",
-  "outInBounce",
-}
+M.easing = vim.tbl_keys(require("tiny-glimmer.animation.easing"))
+table.sort(M.easing)
 
 --- Available effect types
-M.effects = {
-  "fade",
-  "reverse_fade",
-  "bounce",
-  "left_to_right",
-  "pulse",
-  "rainbow",
-}
+M.effects = vim.tbl_keys(require("tiny-glimmer.premade_effects"))
+table.sort(M.effects)
 
 return M

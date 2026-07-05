@@ -19,20 +19,11 @@ local function create_callback(opts)
   end
 end
 
-local function animate_paste(opts, mode)
+local function animate_paste(opts)
   handle_text_change_animation(create_callback(opts))
 end
 
-function M.paste(opts)
-  animate_paste(opts, "p")
-end
-
-function M.Paste(opts)
-  animate_paste(opts, "P")
-end
-
-function M.paste_insert(opts)
-  animate_paste(opts, "<C-R>")
-end
+M.paste = animate_paste
+M.Paste = animate_paste
 
 return M

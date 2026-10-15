@@ -10,6 +10,7 @@
 ---@field reserved_ids table Reserved namespace IDs
 ---@field index_reserved_ids number Index of the reserved namespace IDs
 ---@field buffer number Buffer ID for the animation
+---@field window number Window ID for the animation
 ---@field default_effect_settings table Cached copy of effect settings
 ---@field loop boolean Whether the animation should loop
 ---@field loop_count number Number of times to loop (0 = infinite)
@@ -76,6 +77,7 @@ function GlimmerAnimation.new(effect, opts)
   self.index_reserved_ids = 1
 
   self.buffer = api.nvim_get_current_buf()
+  self.window = api.nvim_get_current_win()
 
   animation_pool_id = animation_pool_id + 1
 

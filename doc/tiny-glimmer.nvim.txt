@@ -1,5 +1,5 @@
 *tiny-glimmer.nvim.txt*
-                             For Neovim >= 0.10.0    Last change: 2026 July 05
+                          For Neovim >= 0.10.0    Last change: 2026 October 15
 
 ==============================================================================
 Table of Contents                        *tiny-glimmer.nvim-table-of-contents*
@@ -37,25 +37,25 @@ https://github.com/user-attachments/assets/745cb1e3-9904-4718-9804-ac0a4fee8748
 
 TABLE OF CONTENTS      *tiny-glimmer.nvim-tiny-glimmer.nvim-table-of-contents*
 
-- |tiny-glimmer.nvim-features|
-- |tiny-glimmer.nvim-requirements|
-- |tiny-glimmer.nvim-installation|
-- |tiny-glimmer.nvim-configuration|
-    - |tiny-glimmer.nvim-built-in-animation-styles|
-    - |tiny-glimmer.nvim-easing-functions|
-    - |tiny-glimmer.nvim-animation-settings|
-- |tiny-glimmer.nvim-examples|
-- |tiny-glimmer.nvim-api|
-    - |tiny-glimmer.nvim-commands|
-- |tiny-glimmer.nvim-library-api|
-    - |tiny-glimmer.nvim-quick-start|
-    - |tiny-glimmer.nvim-core-functions|
-    - |tiny-glimmer.nvim-helper-functions|
-    - |tiny-glimmer.nvim-range-utilities|
-    - |tiny-glimmer.nvim-advanced-usage|
-- |tiny-glimmer.nvim-integrations|
-- |tiny-glimmer.nvim-faq|
-- |tiny-glimmer.nvim-acknowledgments|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-features|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-requirements|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-installation|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-configuration|
+    - Built-in Animation Styles
+    - Easing Functions
+    - Animation Settings
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-examples|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-api|
+    - Commands
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-library-api|
+    - Quick Start
+    - Core Functions
+    - Helper Functions
+    - Range Utilities
+    - Advanced Usage
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-integrations|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-faq|
+- |tiny-glimmer.nvim-tiny-glimmer.nvim-acknowledgments|
 
 
 FEATURES                        *tiny-glimmer.nvim-tiny-glimmer.nvim-features*
@@ -140,35 +140,35 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
     require("tiny-glimmer").setup({
         -- Enable/disable the plugin
         enabled = true,
-    
+
         -- Disable warnings for debugging highlight issues
         disable_warnings = true,
-    
+
         -- Automatically reload highlights when colorscheme changes
         -- When enabled, cached highlights will be refreshed on ColorScheme autocmd
         autoreload = false,
-    
+
         -- Animation refresh rate in milliseconds
         refresh_interval_ms = 8,
-    
+
         -- Timeout in milliseconds to wait after the last edit before processing animations
         -- This uses a debouncing approach: the timer restarts on each edit, and only fires
         -- when edits stop for this duration. This properly handles multi-location atomic
         -- edits from surround plugins and similar tools (default: 50)
         text_change_batch_timeout_ms = 50,
-    
+
         -- Automatic keybinding overwrites
         overwrite = {
             -- Automatically map keys to overwrite operations
             -- Set to false if you have custom mappings or prefer manual API calls
             auto_map = true,
-    
+
             -- Yank operation animation
             yank = {
                 enabled = true,
                 default_animation = "fade",
             },
-    
+
             -- Search navigation animation
             search = {
                 enabled = false,
@@ -176,7 +176,7 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 next_mapping = "n",      -- Key for next match
                 prev_mapping = "N",      -- Key for previous match
             },
-    
+
             -- Paste operation animation
             paste = {
                 enabled = true,
@@ -184,7 +184,7 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 paste_mapping = "p",     -- Paste after cursor
                 Paste_mapping = "P",     -- Paste before cursor
             },
-    
+
             -- Undo operation animation
             undo = {
                 enabled = false,
@@ -198,7 +198,7 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 },
                 undo_mapping = "u",
             },
-    
+
             -- Redo operation animation
             redo = {
                 enabled = false,
@@ -213,7 +213,7 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 redo_mapping = "<c-r>",
             },
         },
-    
+
         -- Third-party plugin integrations
         support = {
             -- Support for gbprod/substitute.nvim
@@ -226,7 +226,7 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 default_animation = "fade",
             },
         },
-    
+
         -- Special animation presets
         presets = {
             -- Pulsar-style cursor highlighting on specific events
@@ -244,10 +244,10 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 },
             },
         },
-    
+
         -- Override background color for animations (for transparent backgrounds)
         transparency_color = nil,
-    
+
         -- Animation configurations
         animations = {
             fade = {
@@ -304,13 +304,13 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 -- Note: Rainbow animation does not use from_color/to_color
                 font_style = {},
             },
-    
+
             -- Custom animation example
             custom = {
                 max_duration = 350,
                 chars_for_max_duration = 40,
                 color = "#ff0000",  -- Custom property
-    
+
                 -- Custom effect function
                 -- @param self table - The effect object with settings
                 -- @param progress number - Animation progress [0, 1]
@@ -321,13 +321,13 @@ CONFIGURATION              *tiny-glimmer.nvim-tiny-glimmer.nvim-configuration*
                 end,
             },
         },
-    
+
         -- Filetypes to disable hijacking/overwrites
         hijack_ft_disabled = {
             "alpha",
             "snacks_dashboard",
         },
-    
+
         -- Virtual text display priority
         virt_text = {
             priority = 2048,  -- Higher values appear above other plugins
@@ -381,32 +381,32 @@ API                                  *tiny-glimmer.nvim-tiny-glimmer.nvim-api*
 
 >lua
     local glimmer = require("tiny-glimmer")
-    
+
     -- Control plugin state
     glimmer.enable()   -- Enable animations
     glimmer.disable()  -- Disable animations
     glimmer.toggle()   -- Toggle animations on/off
-    
+
     -- Change animation highlights dynamically
     -- @param animation_name string|string[] - Animation name(s) or "all"
     -- @param hl table - Highlight configuration { from_color = "...", to_color = "..." }
     glimmer.change_hl("fade", { from_color = "#FF0000", to_color = "#0000FF" })
     glimmer.change_hl("all", { from_color = "#FF0000", to_color = "#0000FF" })
     glimmer.change_hl({"fade", "pulse"}, { from_color = "#FF0000", to_color = "#0000FF" })
-    
+
     -- Search operations (when overwrite.search.enabled = true)
     glimmer.search_next()          -- Same as "n"
     glimmer.search_prev()          -- Same as "N"
     glimmer.search_under_cursor()  -- Same as "*"
-    
+
     -- Paste operations (when overwrite.paste.enabled = true)
     glimmer.paste()   -- Same as "p"
     glimmer.Paste()   -- Same as "P"
-    
+
     -- Undo/redo operations (when undo/redo.enabled = true)
     glimmer.undo()    -- Undo changes
     glimmer.redo()    -- Redo changes
-    
+
     -- Refresh highlights after theme change
     glimmer.apply()   -- Recompute cached highlights for current colorscheme
 <
@@ -446,17 +446,17 @@ QUICK START ~
 
 >lua
     local glimmer = require("tiny-glimmer.lib")
-    
+
     -- Animate current line with fade effect
     vim.keymap.set("n", "<leader>al", function()
       glimmer.cursor_line("fade")
     end)
-    
+
     -- Animate visual selection
     vim.keymap.set("v", "<leader>av", function()
       glimmer.visual_selection("pulse")
     end)
-    
+
     -- Create custom animation on specific range
     vim.keymap.set("n", "<leader>ac", function()
       glimmer.create_animation({
@@ -548,7 +548,7 @@ Create a named animation that can be stopped later using its name.
       loop = true,
       loop_count = 0,  -- Infinite
     })
-    
+
     -- Stop it later
     vim.keymap.set("n", "<leader>x", function()
       glimmer.stop_animation("rainbow_loop")
@@ -607,7 +607,7 @@ Animate the current cursor line.
 >lua
     -- Simple usage
     glimmer.cursor_line("pulse")
-    
+
     -- With custom settings
     glimmer.cursor_line("fade", {
       max_duration = 600,
@@ -615,7 +615,7 @@ Animate the current cursor line.
       loop = true,
       loop_count = 3,
     })
-    
+
     -- With effect configuration
     glimmer.cursor_line({
       name = "pulse",
@@ -667,7 +667,7 @@ Create a named animation for a specific range.
       loop = true,
       loop_count = 0,
     })
-    
+
     -- Stop it later
     glimmer.stop_animation("highlight_1")
 <
@@ -710,7 +710,7 @@ Get the range for a specific line.
 >lua
     -- Get current line (0 or nil)
     local current_line = glimmer.get_line_range(0)
-    
+
     -- Get line 5 (1-indexed)
     local line_5 = glimmer.get_line_range(5)
 <
@@ -751,7 +751,7 @@ LOOPING ANIMATIONS
         print("Looped 3 times!")
       end,
     })
-    
+
     -- Infinite loop (must be named to stop)
     glimmer.create_named_animation("infinite", {
       range = glimmer.get_line_range(0),
@@ -762,7 +762,7 @@ LOOPING ANIMATIONS
       loop = true,
       loop_count = 0,  -- 0 = infinite
     })
-    
+
     -- Stop it when done
     vim.defer_fn(function()
       glimmer.stop_animation("infinite")
@@ -801,7 +801,7 @@ CUSTOM AUTOCMD INTEGRATION
         })
       end,
     })
-    
+
     -- Animate search results
     vim.keymap.set("n", "n", function()
       vim.cmd("normal! n")
@@ -941,7 +941,7 @@ Define a custom animation in the `animations` table:
                 max_duration = 400,
                 chars_for_max_duration = 10,
                 custom_property = "value",
-    
+
                 effect = function(self, progress)
                     -- Your animation logic here
                     return "#ff0000", progress

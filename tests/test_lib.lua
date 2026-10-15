@@ -13,6 +13,8 @@ local function reset_state()
   Lib = require("tiny-glimmer.lib")
 end
 
+local original_nvim_get_current_buf = vim.api.nvim_get_current_buf
+
 local function mock_buffer_api()
   vim.api.nvim_get_current_buf = function()
     return 1
@@ -20,9 +22,7 @@ local function mock_buffer_api()
 end
 
 local function restore_buffer_api()
-  vim.api.nvim_get_current_buf = function()
-    return 0
-  end
+  vim.api.nvim_get_current_buf = original_nvim_get_current_buf
 end
 
 local function mock_animation_modules()

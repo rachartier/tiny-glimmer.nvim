@@ -52,8 +52,9 @@ end
 local function apply_hl(self, line)
   local line_index = self.animation.range.start_line
   local hl_group = self.animation:get_hl_group()
-  if self.cursor_line_enabled then
-    local cursor_position = vim.api.nvim_win_get_cursor(0)
+  local window = self.animation.window
+  if self.cursor_line_enabled and vim.api.nvim_win_is_valid(window) then
+    local cursor_position = vim.api.nvim_win_get_cursor(window)
 
     if cursor_position[1] - 1 == line_index then
       hl_group = self.animation:get_overwrite_hl_group()
@@ -67,16 +68,22 @@ local function apply_hl(self, line)
     end_row = line,
     hl_group = hl_group,
     priority = self.virtual_text_priority,
-  })
+  }, self.animation.buffer)
 end
 
 function LineAnimation:start(refresh_interval_ms, on_complete)
   local length = self.animation.range.end_line - self.animation.range.start_line + 1
 
+  local buf = self.animation.buffer
+
   self.animation:start(refresh_interval_ms, length, {
     on_update = function(update_progress)
+      if not vim.api.nvim_buf_is_valid(buf) then
+        return
+      end
+
       vim.api.nvim_buf_clear_namespace(
-        0,
+        buf,
         namespace,
         self.animation.range.start_line,
         self.animation.range.start_line + 1

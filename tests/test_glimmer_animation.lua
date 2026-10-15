@@ -19,6 +19,19 @@ T["GlimmerAnimation"]["new creates a GlimmerAnimation instance"] = function()
   MiniTest.expect.equality(type(animation.id), "number")
 end
 
+T["GlimmerAnimation"]["new stores the current buffer and window"] = function()
+  local Effect = require("tiny-glimmer.animation.effect")
+  local GlimmerAnimation = require("tiny-glimmer.glimmer_animation")
+
+  local effect = Effect.new({}, function() end)
+  local range = { start_line = 0, start_col = 0, end_line = 0, end_col = 10 }
+
+  local animation = GlimmerAnimation.new(effect, { range = range })
+
+  MiniTest.expect.equality(animation.buffer, vim.api.nvim_get_current_buf())
+  MiniTest.expect.equality(animation.window, vim.api.nvim_get_current_win())
+end
+
 T["GlimmerAnimation"]["new requires range in opts"] = function()
   local Effect = require("tiny-glimmer.animation.effect")
   local GlimmerAnimation = require("tiny-glimmer.glimmer_animation")

@@ -68,9 +68,10 @@ function TextAnimation.new(effect, opts)
 
   self.animation = AnimationEffect.new(effect, animation_opts)
 
+  local window = self.animation.window
   self.viewport = {
-    start_line = vim.fn.line("w0") - 1,
-    end_line = vim.fn.line("w$"),
+    start_line = vim.fn.line("w0", window) - 1,
+    end_line = vim.fn.line("w$", window),
   }
 
   return self
@@ -143,8 +144,9 @@ local function apply_hl(self, line)
   local line_index = line.line_number
   local hl_group = self.animation:get_hl_group()
 
-  if self.cursor_line_enabled then
-    local cursor_position = vim.api.nvim_win_get_cursor(0)
+  local window = self.animation.window
+  if self.cursor_line_enabled and vim.api.nvim_win_is_valid(window) then
+    local cursor_position = vim.api.nvim_win_get_cursor(window)
     if cursor_position[1] - 1 == line_index then
       hl_group = self.animation:get_overwrite_hl_group()
     end
